@@ -96,16 +96,76 @@ final class SpineChain {
             for constraint in constraints {
                 constraint.solve(particles: &particles)
             }
+
+            // 3b. Angular constraint: limit bend angle between consecutive segments
+            solveAngleConstraints()
         }
 
-        // 4. Boundary containment
-        let margin: CGFloat = 10
+        // 4. Boundary containment — shift both position and previousPosition
+        // by the same delta so Verlet velocity stays consistent (no artificial impulse).
+        let margin: CGFloat = 25
         if bounds != .zero {
             for particle in particles where !particle.pinned {
+                let oldX = particle.position.x
+                let oldY = particle.position.y
                 particle.position.x = max(bounds.minX + margin,
                                           min(bounds.maxX - margin, particle.position.x))
                 particle.position.y = max(bounds.minY + margin,
                                           min(bounds.maxY - margin, particle.position.y))
+                let dx = particle.position.x - oldX
+                let dy = particle.position.y - oldY
+                if dx != 0 || dy != 0 {
+                    particle.previousPosition.x += dx
+                    particle.previousPosition.y += dy
+                }
+            }
+        }
+    }
+
+    /// Enforce maximum bend angle between consecutive spine segments.
+    /// If the angle between segment[i-1→i] and segment[i→i+1] exceeds the limit,
+    /// project particle[i+1] back to respect the max bend angle.
+    private func solveAngleConstraints() {
+        let maxAngle = FishConfig.maxSpineBendAngle
+
+        for i in 1..<(particles.count - 1) {
+            // Skip if the particle being moved is pinned
+            guard !particles[i + 1].pinned else { continue }
+
+            let prev = particles[i - 1].position
+            let curr = particles[i].position
+            let next = particles[i + 1].position
+
+            // Direction of segment from prev→curr
+            let d1x = curr.x - prev.x
+            let d1y = curr.y - prev.y
+            let len1 = sqrt(d1x * d1x + d1y * d1y)
+            guard len1 > 0.001 else { continue }
+
+            // Direction of segment from curr→next
+            let d2x = next.x - curr.x
+            let d2y = next.y - curr.y
+            let len2 = sqrt(d2x * d2x + d2y * d2y)
+            guard len2 > 0.001 else { continue }
+
+            // Compute angle between the two segments using cross product and dot product
+            let dot = (d1x * d2x + d1y * d2y) / (len1 * len2)
+            let cross = (d1x * d2y - d1y * d2x) / (len1 * len2)
+            let angle = atan2(cross, dot)
+
+            // If the bend angle exceeds the limit, project 'next' back
+            if abs(angle) > maxAngle {
+                let clampedAngle = angle > 0 ? maxAngle : -maxAngle
+
+                // Rotate the prev→curr direction by the clamped angle to get the allowed direction
+                let baseAngle = atan2(d1y, d1x)
+                let allowedAngle = baseAngle + clampedAngle
+
+                // Place 'next' at the allowed position (maintaining current segment length)
+                particles[i + 1].position = CGPoint(
+                    x: curr.x + cos(allowedAngle) * len2,
+                    y: curr.y + sin(allowedAngle) * len2
+                )
             }
         }
     }

@@ -68,6 +68,9 @@ final class MeshDeformer {
         let vertexCols = columns + 1  // Along spine
         let vertexRows = rows + 1     // Lateral
 
+        // Pre-smooth spine angles to prevent mesh self-intersection during sharp turns
+        let smoothedAngles = smoothSpineAngles(spineAngles)
+
         var destinations: [vector_float2] = []
 
         // Row-major: iterate rows (lateral, bottom→top), then columns (spine, head→tail)
@@ -82,7 +85,7 @@ final class MeshDeformer {
 
                 // Interpolate spine position and angle at this point
                 let spinePos = interpolateSpine(at: t, positions: spinePositions)
-                let angle = interpolateAngle(at: t, angles: spineAngles)
+                let angle = interpolateAngle(at: t, angles: smoothedAngles)
 
                 // Perpendicular direction for lateral offset
                 // Heading angle points from current segment toward head.
@@ -90,8 +93,9 @@ final class MeshDeformer {
                 let perpX = -sin(angle)
                 let perpY = cos(angle)
 
-                // Width at this body position
-                let widthAtT = bodyWidthProfile(t) * bodyWidth
+                // Width at this body position, reduce width during sharp curvature
+                let curvatureFactor = computeCurvatureReduction(at: t, angles: smoothedAngles)
+                let widthAtT = bodyWidthProfile(t) * bodyWidth * curvatureFactor
                 let lateralOffset = lateralT * widthAtT
 
                 // World position of this vertex
@@ -110,14 +114,81 @@ final class MeshDeformer {
                 }
 
                 // Clamp to prevent extreme distortion
-                let clampedX = Float(max(-0.5, min(1.5, normX)))
-                let clampedY = Float(max(-0.5, min(1.5, normY)))
+                let clampedX = Float(max(-0.3, min(1.3, normX)))
+                let clampedY = Float(max(-0.3, min(1.3, normY)))
 
                 destinations.append(vector_float2(clampedX, clampedY))
             }
         }
 
         return destinations
+    }
+
+    // MARK: - Angle Smoothing
+
+    /// Smooth spine angles to prevent adjacent vertices from producing overlapping perpendicular offsets.
+    /// Uses a 3-pass approach: (1) limit max angle difference between consecutive points,
+    /// (2) apply Gaussian-like smoothing, (3) re-limit.
+    private func smoothSpineAngles(_ angles: [CGFloat]) -> [CGFloat] {
+        guard angles.count >= 2 else { return angles }
+
+        var smoothed = angles
+        let maxDiff: CGFloat = FishConfig.maxSpineBendAngle * 1.2  // Slightly more permissive for rendering
+
+        // Pass 1: Clamp maximum angle difference between consecutive spine points (forward)
+        for i in 1..<smoothed.count {
+            var diff = smoothed[i] - smoothed[i - 1]
+            if diff > .pi { diff -= 2 * .pi }
+            if diff < -.pi { diff += 2 * .pi }
+            if abs(diff) > maxDiff {
+                let clampedDiff = diff > 0 ? maxDiff : -maxDiff
+                smoothed[i] = smoothed[i - 1] + clampedDiff
+            }
+        }
+
+        // Pass 2: 1-2-1 kernel smoothing (preserves head angle exactly)
+        var blurred = smoothed
+        for i in 1..<(smoothed.count - 1) {
+            // Use angle-aware averaging to handle wrapping
+            let prev = smoothed[i - 1]
+            let curr = smoothed[i]
+            let next = smoothed[i + 1]
+
+            var diffPrev = prev - curr
+            if diffPrev > .pi { diffPrev -= 2 * .pi }
+            if diffPrev < -.pi { diffPrev += 2 * .pi }
+
+            var diffNext = next - curr
+            if diffNext > .pi { diffNext -= 2 * .pi }
+            if diffNext < -.pi { diffNext += 2 * .pi }
+
+            blurred[i] = curr + (diffPrev * 0.25 + diffNext * 0.25)
+        }
+
+        return blurred
+    }
+
+    /// Compute a width reduction factor based on local curvature.
+    /// When the spine bends sharply, the body width is reduced to prevent mesh overlap.
+    private func computeCurvatureReduction(at t: CGFloat, angles: [CGFloat]) -> CGFloat {
+        guard angles.count >= 2 else { return 1.0 }
+
+        let maxIdx = CGFloat(angles.count - 1)
+        let rawIdx = t * maxIdx
+        let idx0 = min(Int(rawIdx), angles.count - 1)
+        let idx1 = min(idx0 + 1, angles.count - 1)
+
+        if idx0 == idx1 { return 1.0 }
+
+        var angleDiff = angles[idx1] - angles[idx0]
+        if angleDiff > .pi { angleDiff -= 2 * .pi }
+        if angleDiff < -.pi { angleDiff += 2 * .pi }
+
+        // Reduce body width when curvature is high
+        // At max bend angle (~0.7 rad / ~40°), reduce to 70% width
+        let curvature = abs(angleDiff) / FishConfig.maxSpineBendAngle
+        let reduction = max(0.7, 1.0 - curvature * 0.3)
+        return reduction
     }
 
     /// Create a warp grid from the current spine state.

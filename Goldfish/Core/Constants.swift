@@ -41,9 +41,13 @@ enum FishConfig {
     /// Wander behavior: max random angle jitter per frame (radians).
     static let wanderJitter: CGFloat = 0.3
     /// Wall avoidance margin from screen edges (points).
-    static let wallMargin: CGFloat = 60
+    static let wallMargin: CGFloat = 140
     /// Wall avoidance maximum repulsion force multiplier.
     static let wallForceMultiplier: CGFloat = 1.5
+    /// Maximum turn rate (radians per second). Limits how fast the fish can change heading.
+    static let maxTurnRate: CGFloat = 3.0
+    /// Maximum bend angle between consecutive spine segments (radians, ~29°).
+    static let maxSpineBendAngle: CGFloat = 0.5
 
     // MARK: - Interaction
 

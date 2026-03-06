@@ -35,6 +35,7 @@ final class SteeringAgent {
     }
 
     /// Apply a steering force, update velocity and position.
+    /// Includes turn-rate limiting to prevent sharp heading changes that cause texture distortion.
     func update(steeringForce: CGVector, dt: TimeInterval) {
         let dtf = CGFloat(dt)
 
@@ -47,9 +48,37 @@ final class SteeringAgent {
             force.dy *= scale
         }
 
-        // Update velocity
-        velocity.dx += force.dx * dtf
-        velocity.dy += force.dy * dtf
+        // Compute desired new velocity
+        var newVx = velocity.dx + force.dx * dtf
+        var newVy = velocity.dy + force.dy * dtf
+
+        // Turn rate limiting: constrain the angle change per tick
+        let currentSpeed = speed
+        if currentSpeed > 1.0 {
+            let currentAngle = atan2(velocity.dy, velocity.dx)
+            let newSpeed = sqrt(newVx * newVx + newVy * newVy)
+            if newSpeed > 1.0 {
+                let desiredAngle = atan2(newVy, newVx)
+                var angleDiff = desiredAngle - currentAngle
+                // Normalize to [-π, π]
+                while angleDiff > .pi { angleDiff -= 2 * .pi }
+                while angleDiff < -.pi { angleDiff += 2 * .pi }
+
+                let maxAngleChange = FishConfig.maxTurnRate * dtf
+                let clampedDiff = max(-maxAngleChange, min(maxAngleChange, angleDiff))
+                let finalAngle = currentAngle + clampedDiff
+
+                // Fish naturally slow down during sharp turns (quadratic falloff)
+                let turnIntensity = abs(clampedDiff) / maxAngleChange
+                let turnSpeedScale = 1.0 - turnIntensity * turnIntensity * 0.3
+
+                newVx = cos(finalAngle) * newSpeed * turnSpeedScale
+                newVy = sin(finalAngle) * newSpeed * turnSpeedScale
+            }
+        }
+
+        velocity.dx = newVx
+        velocity.dy = newVy
 
         // Clamp to max speed
         let s = speed

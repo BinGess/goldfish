@@ -212,11 +212,29 @@ final class GoldfishEntity {
 
     private func clampAgentToBounds() {
         guard bounds != .zero else { return }
-        let margin: CGFloat = 5
-        steeringAgent.position.x = max(bounds.minX + margin,
-                                        min(bounds.maxX - margin, steeringAgent.position.x))
-        steeringAgent.position.y = max(bounds.minY + margin,
-                                        min(bounds.maxY - margin, steeringAgent.position.y))
+        let margin: CGFloat = 20
+        var pos = steeringAgent.position
+        var vel = steeringAgent.velocity
+
+        if pos.x < bounds.minX + margin {
+            pos.x = bounds.minX + margin
+            if vel.dx < 0 { vel.dx = 0 }
+        }
+        if pos.x > bounds.maxX - margin {
+            pos.x = bounds.maxX - margin
+            if vel.dx > 0 { vel.dx = 0 }
+        }
+        if pos.y < bounds.minY + margin {
+            pos.y = bounds.minY + margin
+            if vel.dy < 0 { vel.dy = 0 }
+        }
+        if pos.y > bounds.maxY - margin {
+            pos.y = bounds.maxY - margin
+            if vel.dy > 0 { vel.dy = 0 }
+        }
+
+        steeringAgent.position = pos
+        steeringAgent.velocity = vel
     }
 
     private func distanceTo(_ point: CGPoint) -> CGFloat {

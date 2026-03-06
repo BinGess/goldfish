@@ -45,10 +45,10 @@
 		60CA3AF70000001A /* AquariumScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AquariumScene.swift; sourceTree = "<group>"; };
 		60CA3AF70000001B /* DebugOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugOverlay.swift; sourceTree = "<group>"; };
 		60CA3AF70000001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		60CA3AF700000020 /* Goldfish.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Goldfish.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		60CA3AF70000001D /* SteeringAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteeringAgent.swift; sourceTree = "<group>"; };
 		60CA3AF70000001E /* SteeringBehaviors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteeringBehaviors.swift; sourceTree = "<group>"; };
 		60CA3AF70000001F /* BehaviorCombiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BehaviorCombiner.swift; sourceTree = "<group>"; };
+		60CA3AF700000020 /* Goldfish.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Goldfish.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		60CA3AF700000021 /* FishStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishStateManager.swift; sourceTree = "<group>"; };
 		60CA3AF700000022 /* FishMotionDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishMotionDriver.swift; sourceTree = "<group>"; };
 		60CA3AF700000023 /* GoldfishEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldfishEntity.swift; sourceTree = "<group>"; };
@@ -301,13 +301,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 742UUCBN9G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -319,7 +320,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -331,13 +332,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 742UUCBN9G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -349,7 +351,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

@@ -91,27 +91,71 @@ enum SteeringBehaviors {
 
     // MARK: - Wall Avoidance
 
-    /// Soft repulsion from screen edges.
+    /// Heading-aware wall avoidance with tangential redirect.
+    /// Produces a smooth arcing turn when approaching walls instead of abrupt reversal.
+    /// - Repulsion: cubic ease-in push away from wall, scaled by how directly the fish heads toward it.
+    /// - Tangential: redirects the fish to curve along the wall in its current lateral direction.
     static func wallAvoidance(agent: SteeringAgent, bounds: CGRect, margin: CGFloat) -> CGVector {
         var force = CGVector.zero
         let maxF = agent.maxForce * FishConfig.wallForceMultiplier
+        let speed = agent.speed
+        let vel = agent.velocity
 
         let left = agent.position.x - bounds.minX
         let right = bounds.maxX - agent.position.x
         let bottom = agent.position.y - bounds.minY
         let top = bounds.maxY - agent.position.y
 
-        if left < margin && left > 0 {
-            force.dx += (1.0 - left / margin) * maxF
+        func wallEffect(dist: CGFloat, velToward: CGFloat) -> (repulsion: CGFloat, tangential: CGFloat) {
+            guard dist < margin && dist > 0 else { return (0, 0) }
+
+            let t = 1.0 - dist / margin
+
+            let headingFactor: CGFloat
+            if velToward > 0 && speed > 1 {
+                let approachRatio = min(velToward / speed, 1.0)
+                headingFactor = 1.0 + approachRatio * 2.0
+            } else {
+                headingFactor = 0.3
+            }
+
+            let repulsion = t * t * t * maxF * headingFactor
+
+            var tangential: CGFloat = 0
+            if velToward > 0 && speed > 1 {
+                let approachRatio = min(velToward / speed, 1.0)
+                tangential = t * t * maxF * 0.6 * approachRatio
+            }
+
+            return (repulsion, tangential)
         }
-        if right < margin && right > 0 {
-            force.dx -= (1.0 - right / margin) * maxF
+
+        if left < margin {
+            let (rep, tang) = wallEffect(dist: left, velToward: -vel.dx)
+            force.dx += rep
+            let tangentDir: CGFloat = vel.dy >= 0 ? 1 : -1
+            force.dy += tang * tangentDir
         }
-        if bottom < margin && bottom > 0 {
-            force.dy += (1.0 - bottom / margin) * maxF
+
+        if right < margin {
+            let (rep, tang) = wallEffect(dist: right, velToward: vel.dx)
+            force.dx -= rep
+            let tangentDir: CGFloat = vel.dy >= 0 ? 1 : -1
+            force.dy += tang * tangentDir
         }
-        if top < margin && top > 0 {
-            force.dy -= (1.0 - top / margin) * maxF
+
+        if bottom < margin {
+            let (rep, tang) = wallEffect(dist: bottom, velToward: -vel.dy)
+            force.dy += rep
+            let tangentDir: CGFloat = vel.dx >= 0 ? 1 : -1
+            force.dx += tang * tangentDir
+        }
+
+        if top < margin {
+            let (rep, tang) = wallEffect(dist: top, velToward: vel.dy)
+            force.dy -= rep
+            let tangentDir: CGFloat = vel.dx >= 0 ? 1 : -1
+            force.dx += tang * tangentDir
         }
 
         return force
