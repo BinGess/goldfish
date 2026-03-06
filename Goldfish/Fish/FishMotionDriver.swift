@@ -12,6 +12,8 @@ final class FishMotionDriver {
     var frequencyMultiplier: CGFloat = 1.0
     /// Amplitude multiplier (modified by state).
     var amplitudeMultiplier: CGFloat = 1.0
+    /// Runtime panel-controlled amplitude scale.
+    var externalAmplitudeScale: CGFloat = MotionTuningValues.default.tailAmplitudeScale
 
     /// Apply oscillation forces to the spine chain.
     /// - Parameters:
@@ -35,7 +37,8 @@ final class FishMotionDriver {
         let baseAmp = FishConfig.baseAmplitude
         let amplitude = baseAmp * (0.3 + 0.7 * speedRatio) * amplitudeMultiplier
         // Minimum amplitude for idle breathing
-        let effectiveAmp = max(amplitude, baseAmp * 0.15)
+        let panelAmplitude = max(0.35, min(2.0, externalAmplitudeScale))
+        let effectiveAmp = max(amplitude, baseAmp * 0.15) * panelAmplitude
 
         // Advance phase
         oscillationPhase += effectiveFreq * 2 * .pi * dtf
@@ -45,11 +48,6 @@ final class FishMotionDriver {
             oscillationPhase -= 2 * .pi * 100
         }
 
-        // Get heading perpendicular for lateral force direction
-        let headAngle = spine.headAngle
-        let perpX = -sin(headAngle)
-        let perpY = cos(headAngle)
-
         let particleCount = spine.particles.count
         let amplitudeGradient = FishConfig.amplitudeGradient
         let forceScale = FishConfig.oscillationForceScale
@@ -58,17 +56,48 @@ final class FishMotionDriver {
         for i in 1..<particleCount {
             let t = CGFloat(i) / CGFloat(particleCount - 1) // 0 at head, 1 at tail
 
-            // Amplitude increases toward tail
-            let localAmplitude = effectiveAmp * (amplitudeGradient + (1 - amplitudeGradient) * t)
+            // Amplitude ramps up non-linearly toward tail for less "robotic" uniform sway.
+            let easedTail = t * t * (3 - 2 * t) // smoothstep
+            var localAmplitude = effectiveAmp * (amplitudeGradient + (1 - amplitudeGradient) * easedTail)
+            if i == 1 {
+                // Keep neck area stiffer than tail.
+                localAmplitude *= 0.6
+            }
 
-            // Traveling wave: phase decreases along body
-            let wave = sin(oscillationPhase - t * 1.5 * .pi) * localAmplitude
+            // Traveling wave from head toward tail with slightly longer wavelength.
+            let wave = sin(oscillationPhase - t * 1.65 * .pi) * localAmplitude
 
-            // Apply as lateral force
-            let forceX = perpX * wave * forceScale * dtf
-            let forceY = perpY * wave * forceScale * dtf
+            // Use local spine tangent for force direction to avoid whole-body rigid swinging.
+            let lateral = localLateralDirection(spine: spine, index: i)
+            let forceX = lateral.dx * wave * forceScale * dtf
+            let forceY = lateral.dy * wave * forceScale * dtf
 
             spine.particles[i].applyForce(CGVector(dx: forceX, dy: forceY))
         }
+    }
+
+    /// Local lateral direction (unit vector) derived from neighborhood tangent.
+    private func localLateralDirection(spine: SpineChain, index: Int) -> CGVector {
+        let particles = spine.particles
+        let count = particles.count
+        guard count >= 2 else { return CGVector(dx: 0, dy: 1) }
+
+        let prevIndex = max(0, index - 1)
+        let nextIndex = min(count - 1, index + 1)
+        let prevPos = particles[prevIndex].position
+        let nextPos = particles[nextIndex].position
+
+        var tx = prevPos.x - nextPos.x
+        var ty = prevPos.y - nextPos.y
+        let tLen = sqrt(tx * tx + ty * ty)
+        if tLen > 0.001 {
+            tx /= tLen
+            ty /= tLen
+            return CGVector(dx: -ty, dy: tx)
+        }
+
+        // Fallback to head orientation if local tangent degenerates.
+        let headAngle = spine.headAngle
+        return CGVector(dx: -sin(headAngle), dy: cos(headAngle))
     }
 }

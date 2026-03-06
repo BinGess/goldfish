@@ -161,11 +161,18 @@ final class SpineChain {
                 let baseAngle = atan2(d1y, d1x)
                 let allowedAngle = baseAngle + clampedAngle
 
-                // Place 'next' at the allowed position (maintaining current segment length)
-                particles[i + 1].position = CGPoint(
+                // Place 'next' at the allowed position (maintaining current segment length).
+                // Shift previousPosition by the same delta to avoid injecting velocity spikes.
+                let oldNext = particles[i + 1].position
+                let newNext = CGPoint(
                     x: curr.x + cos(allowedAngle) * len2,
                     y: curr.y + sin(allowedAngle) * len2
                 )
+                particles[i + 1].position = newNext
+                let deltaX = newNext.x - oldNext.x
+                let deltaY = newNext.y - oldNext.y
+                particles[i + 1].previousPosition.x += deltaX
+                particles[i + 1].previousPosition.y += deltaY
             }
         }
     }

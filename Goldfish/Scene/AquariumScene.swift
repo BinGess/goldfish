@@ -6,11 +6,12 @@ final class AquariumScene: SKScene {
 
     // MARK: - Subsystems
 
-    private var fish: GoldfishEntity!
+    private var fish: GoldfishEntity?
     private var touchTracker = TouchTracker()
-    private var debugOverlay: DebugOverlay!
-    private var backgroundLayer: BackgroundLayer!
+    private var debugOverlay: DebugOverlay?
+    private var backgroundLayer: BackgroundLayer?
     private var performanceMonitor = PerformanceMonitor()
+    private var motionTuning: MotionTuningValues = .default
 
     // MARK: - Physics Accumulator
 
@@ -19,50 +20,29 @@ final class AquariumScene: SKScene {
 
     // MARK: - Debug
 
-    private var stateLabel: SKLabelNode!
+    private var stateLabel: SKLabelNode?
     private var debugVisible = false
-    private var lastTouchTime: TimeInterval = 0
+    private var sceneInitialized = false
 
     // MARK: - Lifecycle
 
     override func didMove(to view: SKView) {
         super.didMove(to: view)
         backgroundColor = SKColor(red: 0.02, green: 0.08, blue: 0.22, alpha: 1.0)
-
-        // Water background
-        backgroundLayer = BackgroundLayer(size: size)
-        addChild(backgroundLayer.node)
-
-        // Initialize fish at screen center
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        fish = GoldfishEntity(position: center)
-        fish.bounds = CGRect(origin: .zero, size: size)
-        fish.screenWidth = size.width
-
-        // Setup fish visual rendering
-        fish.setupRendering(in: self)
-
-        // Debug overlay (on top of everything, hidden by default)
-        debugOverlay = DebugOverlay()
-        debugOverlay.isVisible = debugVisible
-        addChild(debugOverlay.node)
-
-        // State label (only visible in debug mode)
-        stateLabel = SKLabelNode(fontNamed: "Menlo")
-        stateLabel.fontSize = 12
-        stateLabel.fontColor = SKColor(white: 1, alpha: 0.7)
-        stateLabel.horizontalAlignmentMode = .left
-        stateLabel.verticalAlignmentMode = .top
-        stateLabel.position = CGPoint(x: 10, y: size.height - 60)
-        stateLabel.zPosition = 1001
-        stateLabel.isHidden = !debugVisible
-        addChild(stateLabel)
-
-        Time.reset()
+        setupSceneContentIfNeeded()
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
+
+        if sceneInitialized, oldSize != size {
+            backgroundLayer?.node.removeFromParent()
+            let newBackground = BackgroundLayer(size: size)
+            backgroundLayer = newBackground
+            addChild(newBackground.node)
+        }
+
+        setupSceneContentIfNeeded()
         fish?.bounds = CGRect(origin: .zero, size: size)
         fish?.screenWidth = size.width
         stateLabel?.position = CGPoint(x: 10, y: size.height - 60)
@@ -71,6 +51,9 @@ final class AquariumScene: SKScene {
     // MARK: - Game Loop
 
     override func update(_ currentTime: TimeInterval) {
+        setupSceneContentIfNeeded()
+        guard let fish else { return }
+
         let dt = Time.update(currentTime)
         guard dt > 0 else { return }
 
@@ -94,7 +77,7 @@ final class AquariumScene: SKScene {
 
         // Render debug overlay (only if visible)
         if debugVisible {
-            debugOverlay.update(
+            debugOverlay?.update(
                 spinePositions: fish.spinePositions,
                 headAngle: fish.headAngle,
                 targetPosition: touchTracker.position ?? touchTracker.lastPosition
@@ -103,8 +86,14 @@ final class AquariumScene: SKScene {
             let state = fish.stateManager.currentState.rawValue.uppercased()
             let fps = String(format: "%.0f", performanceMonitor.averageFPS)
             let spd = String(format: "%.0f", fish.steeringAgent.speed)
-            stateLabel.text = "[\(state)]  v=\(spd)  \(fps)fps  deg=\(performanceMonitor.degradationLevel)"
+            stateLabel?.text = "[\(state)]  v=\(spd)  \(fps)fps  deg=\(performanceMonitor.degradationLevel)"
         }
+    }
+
+    /// Called by the host SwiftUI panel to update runtime motion tuning.
+    func setMotionTuning(_ tuning: MotionTuningValues) {
+        motionTuning = tuning
+        fish?.applyMotionTuning(tuning)
     }
 
     // MARK: - Touch Handling
@@ -139,7 +128,44 @@ final class AquariumScene: SKScene {
 
     private func toggleDebug() {
         debugVisible.toggle()
-        debugOverlay.isVisible = debugVisible
-        stateLabel.isHidden = !debugVisible
+        debugOverlay?.isVisible = debugVisible
+        stateLabel?.isHidden = !debugVisible
+    }
+
+    private func setupSceneContentIfNeeded() {
+        guard !sceneInitialized else { return }
+        guard size.width > 1, size.height > 1 else { return }
+
+        let background = BackgroundLayer(size: size)
+        backgroundLayer = background
+        addChild(background.node)
+
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let fish = GoldfishEntity(position: center)
+        fish.bounds = CGRect(origin: .zero, size: size)
+        fish.screenWidth = size.width
+        fish.applyMotionTuning(motionTuning)
+        fish.setupRendering(in: self)
+        self.fish = fish
+
+        let overlay = DebugOverlay()
+        overlay.isVisible = debugVisible
+        debugOverlay = overlay
+        addChild(overlay.node)
+
+        let label = SKLabelNode(fontNamed: "Menlo")
+        label.fontSize = 12
+        label.fontColor = SKColor(white: 1, alpha: 0.7)
+        label.horizontalAlignmentMode = .left
+        label.verticalAlignmentMode = .top
+        label.position = CGPoint(x: 10, y: size.height - 60)
+        label.zPosition = 1001
+        label.isHidden = !debugVisible
+        stateLabel = label
+        addChild(label)
+
+        physicsAccumulator = 0
+        Time.reset()
+        sceneInitialized = true
     }
 }

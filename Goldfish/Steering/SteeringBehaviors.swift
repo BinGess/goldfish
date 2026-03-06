@@ -72,12 +72,24 @@ enum SteeringBehaviors {
         let wanderJitter = FishConfig.wanderJitter
 
         // Project a circle ahead of the agent
-        let heading = agent.headingVector
+        let heading: CGVector
+        let hv = agent.headingVector
+        if abs(hv.dx) < 0.001 && abs(hv.dy) < 0.001 {
+            // Low-speed fallback avoids "stuck" heading singularity.
+            heading = CGVector(dx: cos(state.wanderAngle), dy: sin(state.wanderAngle))
+        } else {
+            heading = hv
+        }
         let circleCenter = CGVector(dx: heading.dx * wanderDistance,
                                      dy: heading.dy * wanderDistance)
 
-        // Random jitter to the wander angle
-        state.wanderAngle += CGFloat.random(in: -wanderJitter...wanderJitter)
+        // Random jitter with heading memory to keep motion organic, not twitchy.
+        state.wanderAngle += CGFloat.random(in: -wanderJitter...wanderJitter) * 0.65
+        let headingAngle = atan2(heading.dy, heading.dx)
+        var angleDiff = state.wanderAngle - headingAngle
+        while angleDiff > .pi { angleDiff -= 2 * .pi }
+        while angleDiff < -.pi { angleDiff += 2 * .pi }
+        state.wanderAngle = headingAngle + angleDiff * 0.92
 
         let displacement = CGVector(dx: cos(state.wanderAngle) * wanderRadius,
                                      dy: sin(state.wanderAngle) * wanderRadius)

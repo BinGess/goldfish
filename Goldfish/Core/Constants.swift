@@ -102,3 +102,21 @@ enum FishConfig {
     /// Lazy mode frequency multiplier.
     static let lazyFrequencyMultiplier: CGFloat = 0.8
 }
+
+/// Runtime tuning values controlled by the on-screen motion panel.
+struct MotionTuningValues {
+    var enabled: Bool
+    /// Shared smoothing factor used by steering and state transitions.
+    var speedSmoothing: CGFloat
+    /// Global multiplier for tail/body oscillation amplitude.
+    var tailAmplitudeScale: CGFloat
+    /// Scales curious/chase/flee state thresholds together.
+    var stateThresholdScale: CGFloat
+
+    static let `default` = MotionTuningValues(
+        enabled: true,
+        speedSmoothing: 0.30,
+        tailAmplitudeScale: 1.0,
+        stateThresholdScale: 1.0
+    )
+}

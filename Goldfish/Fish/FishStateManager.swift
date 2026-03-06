@@ -26,6 +26,8 @@ final class FishStateManager {
 
     /// Orbit direction for curious circling (randomized on enter).
     private(set) var orbitClockwise: Bool = Bool.random()
+    /// Runtime panel-controlled scale applied to state thresholds.
+    var thresholdScale: CGFloat = MotionTuningValues.default.stateThresholdScale
 
     /// Evaluate touch input and update state.
     /// - Parameters:
@@ -33,6 +35,13 @@ final class FishStateManager {
     ///   - touchSpeed: Speed of the touch point in points/second.
     ///   - dt: Frame delta time.
     func update(touchActive: Bool, touchSpeed: CGFloat, dt: TimeInterval) {
+        let scale = max(0.6, min(1.8, thresholdScale))
+        let curiousThreshold = FishConfig.curiousSpeedThreshold * scale
+        let fleeThreshold = max(
+            curiousThreshold * 1.8,
+            FishConfig.fleeSpeedThreshold * scale
+        )
+
         if touchActive {
             idleTimer = 0
             isPostTouchGlide = false
@@ -47,13 +56,18 @@ final class FishStateManager {
                 return
             }
 
-            if touchSpeed > FishConfig.fleeSpeedThreshold {
+            if touchSpeed > fleeThreshold {
                 transitionTo(.flee)
                 fleeTimer = FishConfig.fleeDuration
-            } else if touchSpeed > FishConfig.curiousSpeedThreshold {
-                transitionTo(.chase)
             } else {
-                transitionTo(.curious)
+                // Hysteresis avoids rapid chase/curious flicker near threshold.
+                let chaseEnter = curiousThreshold * 1.05
+                let chaseExit = curiousThreshold * 0.75
+                if currentState == .chase {
+                    transitionTo(touchSpeed >= chaseExit ? .chase : .curious)
+                } else {
+                    transitionTo(touchSpeed > chaseEnter ? .chase : .curious)
+                }
             }
         } else {
             // No touch

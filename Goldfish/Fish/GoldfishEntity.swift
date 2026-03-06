@@ -26,6 +26,9 @@ final class GoldfishEntity {
     /// Screen width (used for speed normalization in interaction).
     var screenWidth: CGFloat = 390
 
+    /// Runtime motion tuning controlled by UI panel.
+    private var motionTuning: MotionTuningValues = .default
+
     // MARK: - Init
 
     init(position: CGPoint) {
@@ -36,6 +39,8 @@ final class GoldfishEntity {
 
         // Give initial velocity so wander has a heading
         steeringAgent.velocity = CGVector(dx: 30, dy: 10)
+        steeringAgent.maxSpeed = FishConfig.maxSpeed * 0.5
+        applyMotionTuning(.default)
     }
 
     /// Setup visual rendering. Call after init, adds fish sprite to the scene.
@@ -50,6 +55,15 @@ final class GoldfishEntity {
         )
         scene.addChild(assembler.rootNode)
         self.spriteAssembler = assembler
+    }
+
+    /// Apply runtime motion tuning from debug panel.
+    func applyMotionTuning(_ tuning: MotionTuningValues) {
+        motionTuning = tuning
+        let effective = tuning.enabled ? tuning : .default
+        steeringAgent.forceSmoothingFactor = effective.speedSmoothing
+        motionDriver.externalAmplitudeScale = effective.tailAmplitudeScale
+        stateManager.thresholdScale = effective.stateThresholdScale
     }
 
     // MARK: - Positions for Rendering
@@ -91,10 +105,7 @@ final class GoldfishEntity {
         spineChain.simulate(dt: dt)
 
         // 9. Update visual rendering (after physics, outside fixed timestep)
-        spriteAssembler?.update(
-            spinePositions: spineChain.positions,
-            spineAngles: spineChain.angles
-        )
+        spriteAssembler?.update(spinePositions: spineChain.positions)
     }
 
     // MARK: - Steering Force Computation
@@ -169,32 +180,47 @@ final class GoldfishEntity {
     // MARK: - State-Dependent Speed Limits
 
     private func applyStateSpeedLimits() {
+        let effective = motionTuning.enabled ? motionTuning : .default
+        let smoothing = max(0.05, min(0.5, effective.speedSmoothing))
+
+        let targetSpeed: CGFloat
+        let targetFrequency: CGFloat
+        let targetAmplitude: CGFloat
+
         switch stateManager.currentState {
         case .idle:
-            steeringAgent.maxSpeed = FishConfig.maxSpeed * 0.5
-            motionDriver.frequencyMultiplier = 1.0
-            motionDriver.amplitudeMultiplier = 1.0
+            targetSpeed = FishConfig.maxSpeed * 0.5
+            targetFrequency = 1.0
+            targetAmplitude = 1.0
 
         case .curious:
-            steeringAgent.maxSpeed = screenWidth * FishConfig.curiousSpeedFraction
-            motionDriver.frequencyMultiplier = 0.7
-            motionDriver.amplitudeMultiplier = 0.8
+            targetSpeed = screenWidth * FishConfig.curiousSpeedFraction
+            targetFrequency = 0.7
+            targetAmplitude = 0.8
 
         case .chase:
-            steeringAgent.maxSpeed = screenWidth * FishConfig.chaseSpeedFraction
-            motionDriver.frequencyMultiplier = 1.3
-            motionDriver.amplitudeMultiplier = 1.2
+            targetSpeed = screenWidth * FishConfig.chaseSpeedFraction
+            targetFrequency = 1.3
+            targetAmplitude = 1.2
 
         case .flee:
-            steeringAgent.maxSpeed = screenWidth * FishConfig.fleeSpeedFraction
-            motionDriver.frequencyMultiplier = 1.8
-            motionDriver.amplitudeMultiplier = 1.5
+            targetSpeed = screenWidth * FishConfig.fleeSpeedFraction
+            targetFrequency = 1.8
+            targetAmplitude = 1.5
 
         case .lazy:
-            steeringAgent.maxSpeed = FishConfig.maxSpeed * FishConfig.lazySpeedMultiplier * 0.4
-            motionDriver.frequencyMultiplier = FishConfig.lazyFrequencyMultiplier
-            motionDriver.amplitudeMultiplier = 0.6
+            targetSpeed = FishConfig.maxSpeed * FishConfig.lazySpeedMultiplier * 0.4
+            targetFrequency = FishConfig.lazyFrequencyMultiplier
+            targetAmplitude = 0.6
         }
+
+        // Ease parameter changes to avoid abrupt "gear shift" movement.
+        let smoothedSpeed = steeringAgent.maxSpeed + (targetSpeed - steeringAgent.maxSpeed) * smoothing
+        steeringAgent.maxSpeed = max(35, smoothedSpeed)
+        motionDriver.frequencyMultiplier +=
+            (targetFrequency - motionDriver.frequencyMultiplier) * smoothing
+        motionDriver.amplitudeMultiplier +=
+            (targetAmplitude - motionDriver.amplitudeMultiplier) * smoothing
     }
 
     // MARK: - Oscillation

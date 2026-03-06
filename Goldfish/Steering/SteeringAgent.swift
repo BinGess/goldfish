@@ -12,6 +12,12 @@ final class SteeringAgent {
     var maxSpeed: CGFloat = FishConfig.maxSpeed
     /// Maximum steering force (points/second²).
     var maxForce: CGFloat = FishConfig.maxForce
+    /// Steering force smoothing factor [0, 1].
+    var forceSmoothingFactor: CGFloat = MotionTuningValues.default.speedSmoothing
+    /// Smoothed steering force for motion continuity.
+    private var smoothedSteeringForce: CGVector = .zero
+    /// Last reliable heading used when speed is very low.
+    private var lastHeadingVector: CGVector = CGVector(dx: 1, dy: 0)
 
     init(position: CGPoint) {
         self.position = position
@@ -30,8 +36,10 @@ final class SteeringAgent {
     /// Normalized heading vector (or zero if stationary).
     var headingVector: CGVector {
         let s = speed
-        guard s > 0.01 else { return .zero }
-        return CGVector(dx: velocity.dx / s, dy: velocity.dy / s)
+        guard s > 0.01 else { return lastHeadingVector }
+        let unit = CGVector(dx: velocity.dx / s, dy: velocity.dy / s)
+        lastHeadingVector = unit
+        return unit
     }
 
     /// Apply a steering force, update velocity and position.
@@ -47,6 +55,10 @@ final class SteeringAgent {
             force.dx *= scale
             force.dy *= scale
         }
+        let forceSmoothing = max(0.01, min(0.95, forceSmoothingFactor))
+        smoothedSteeringForce.dx += (force.dx - smoothedSteeringForce.dx) * forceSmoothing
+        smoothedSteeringForce.dy += (force.dy - smoothedSteeringForce.dy) * forceSmoothing
+        force = smoothedSteeringForce
 
         // Compute desired new velocity
         var newVx = velocity.dx + force.dx * dtf
