@@ -9,6 +9,8 @@ final class DebugOverlay {
     private var lineNode: SKShapeNode
     private var targetNode: SKShapeNode
     private var headingNode: SKShapeNode
+    /// Three feeler ray lines: center (white), left (cyan), right (cyan).
+    private var feelerNodes: [SKShapeNode] = []
 
     /// Whether the overlay is visible.
     var isVisible: Bool {
@@ -42,6 +44,22 @@ final class DebugOverlay {
         headingNode.lineWidth = 2
         node.addChild(headingNode)
 
+        // Feeler ray nodes: center (white), left (cyan), right (cyan)
+        let feelerColors: [SKColor] = [
+            SKColor(white: 1.0, alpha: 0.75),
+            SKColor(red: 0.2, green: 0.9, blue: 1.0, alpha: 0.60),
+            SKColor(red: 0.2, green: 0.9, blue: 1.0, alpha: 0.60),
+        ]
+        for color in feelerColors {
+            let ray = SKShapeNode()
+            ray.strokeColor = color
+            ray.lineWidth = 1.5
+            ray.lineCap = .round
+            ray.isHidden = true
+            node.addChild(ray)
+            feelerNodes.append(ray)
+        }
+
         // Create particle circle nodes (will be positioned in update)
         for i in 0..<FishConfig.spineParticleCount {
             let radius: CGFloat = i == 0 ? 8 : (i < FishConfig.spineParticleCount - 2 ? 5 : 4)
@@ -62,6 +80,39 @@ final class DebugOverlay {
             circle.lineWidth = 1.5
             node.addChild(circle)
             particleNodes.append(circle)
+        }
+    }
+
+    /// Draw the three look-ahead feeler rays from the agent position.
+    func updateFeelers(agentPosition: CGPoint, velocity: CGVector, speed: CGFloat, bounds: CGRect) {
+        guard speed > 8 else {
+            feelerNodes.forEach { $0.isHidden = true }
+            return
+        }
+
+        let headingAngle = atan2(velocity.dy, velocity.dx)
+        let feelerReach  = speed * FishConfig.wallFeelerTime
+        let feelerAngle  = FishConfig.wallFeelerAngle
+
+        // (angle offset, length fraction)
+        let configs: [(CGFloat, CGFloat)] = [
+            (0,             1.00),
+            ( feelerAngle,  0.55),
+            (-feelerAngle,  0.55),
+        ]
+
+        for (i, (offset, lengthFraction)) in configs.enumerated() {
+            guard i < feelerNodes.count else { break }
+            let angle  = headingAngle + offset
+            let reach  = feelerReach * lengthFraction
+            let endX   = agentPosition.x + cos(angle) * reach
+            let endY   = agentPosition.y + sin(angle) * reach
+
+            let path = CGMutablePath()
+            path.move(to: agentPosition)
+            path.addLine(to: CGPoint(x: endX, y: endY))
+            feelerNodes[i].path = path
+            feelerNodes[i].isHidden = false
         }
     }
 

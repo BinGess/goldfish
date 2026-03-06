@@ -45,11 +45,24 @@ final class GoldfishEntity {
 
     /// Setup visual rendering. Call after init, adds fish sprite to the scene.
     func setupRendering(in scene: SKScene) {
-        let texture = FishTextureGenerator.generateBodyTexture(
-            size: CGSize(width: 512, height: 256)
-        )
+        // Load body texture from Assets; fall back to procedural if asset is missing.
+        let bodyTexture: SKTexture
+        if UIImage(named: "fish_body") != nil {
+            bodyTexture = SKTexture(imageNamed: "fish_body")
+        } else {
+            bodyTexture = FishTextureGenerator.generateBodyTexture(
+                size: CGSize(width: 512, height: 256)
+            )
+        }
+
+        // Load tail fin texture from Assets (optional — nil disables separate tail sprite).
+        let tailTexture: SKTexture? = UIImage(named: "fish_tail") != nil
+            ? SKTexture(imageNamed: "fish_tail")
+            : nil
+
         let assembler = FishSpriteAssembler(
-            texture: texture,
+            bodyTexture: bodyTexture,
+            tailTexture: tailTexture,
             bodyLength: 240,
             bodyWidth: 90
         )

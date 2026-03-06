@@ -21,6 +21,8 @@ final class MeshDeformer {
     let sourcePositions: [vector_float2]
 
     /// Fish body width profile (0=head, 1=tail) → width multiplier [0..1].
+    /// Minimum tail width raised to 0.30 (was 0.15) to prevent needle-like
+    /// geometry at the caudal peduncle; the tail sprite covers that area.
     private func bodyWidthProfile(_ t: CGFloat) -> CGFloat {
         if t < 0.15 {
             return 0.5 + 0.5 * (t / 0.15)   // Head taper
@@ -28,7 +30,9 @@ final class MeshDeformer {
             return 1.0                         // Widest section
         } else {
             let tailT = (t - 0.35) / 0.65
-            return max(0.15, 1.0 - pow(tailT, 0.7) * 0.85)  // Taper to tail
+            // Softer exponent (0.65) and coefficient (0.70) keep the body wider
+            // through the caudal region; minimum 0.30 avoids the thin needle.
+            return max(0.30, 1.0 - pow(tailT, 0.65) * 0.70)
         }
     }
 
@@ -162,7 +166,8 @@ final class MeshDeformer {
             if diffNext > .pi { diffNext -= 2 * .pi }
             if diffNext < -.pi { diffNext += 2 * .pi }
 
-            blurred[i] = curr + (diffPrev * 0.25 + diffNext * 0.25)
+            // Increased blend (0.30 each, total 0.60) for smoother mesh during turns.
+            blurred[i] = curr + (diffPrev * 0.30 + diffNext * 0.30)
         }
 
         return blurred

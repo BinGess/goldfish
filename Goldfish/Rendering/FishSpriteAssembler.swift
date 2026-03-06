@@ -1,56 +1,93 @@
 import SpriteKit
 
 /// Assembles and manages the layered fish sprite with warp-grid deformation.
-/// The sprite uses a fixed large size and is repositioned each frame to
-/// cover the spine bounding box. The warp grid bends the texture to follow
-/// the spine curve.
+///
+/// Layer architecture:
+///   - bodySprite  (zPosition  0): oval body textured via SKWarpGeometryGrid.
+///   - tailSprite  (zPosition +1): separate tail-fin sprite anchored at the N-2 spine
+///                                 particle. Renders IN FRONT to cover the body's thin
+///                                 caudal peduncle end. NOT warped; rotates per frame.
 final class FishSpriteAssembler {
 
     // MARK: - Sprite Nodes
 
-    /// The root node containing all fish visual elements.
+    /// Root node containing all fish visual elements.
     let rootNode: SKNode
 
-    /// The body sprite with warp geometry applied.
+    /// Body sprite with warp geometry applied.
     private let bodySprite: SKSpriteNode
 
-    /// The mesh deformer that maps spine → warp grid.
+    /// Tail fin sprite — independent of warp, follows last spine segment angle.
+    private let tailSprite: SKSpriteNode?
+
+    /// Mesh deformer that maps spine → warp grid.
     private let meshDeformer: MeshDeformer
 
-    /// Visual body width for warp calculations (points).
-    let bodyWidth: CGFloat
+    // MARK: - Dimensions
 
-    /// Visual body length for sprite sizing.
+    let bodyWidth: CGFloat
     let bodyLength: CGFloat
 
-    /// Smoothed render frame to suppress occasional mesh spikes.
+    // MARK: - Smoothing State
+
+    /// Smoothed bounding frame to suppress rendering jitter.
     private var smoothedFrame: CGRect?
+
+    /// Smoothed tail angle to prevent per-frame rotation jitter.
+    private var smoothedTailAngle: CGFloat?
 
     // MARK: - Init
 
-    init(texture: SKTexture, bodyLength: CGFloat = 240, bodyWidth: CGFloat = 90) {
+    /// - Parameters:
+    ///   - bodyTexture: Texture for the fish body (head-left, tail-right, no caudal fin).
+    ///   - tailTexture: Optional separate caudal fin texture (root at left-center, fan opens right).
+    ///   - bodyLength:  Spine arc length in points.
+    ///   - bodyWidth:   Maximum body width in points.
+    init(
+        bodyTexture: SKTexture,
+        tailTexture: SKTexture? = nil,
+        bodyLength: CGFloat = 240,
+        bodyWidth: CGFloat = 90
+    ) {
         self.bodyLength = bodyLength
-        self.bodyWidth = bodyWidth
+        self.bodyWidth  = bodyWidth
         self.meshDeformer = MeshDeformer()
 
-        // Root node positioned at world origin; sprite is child
+        // Root node at world origin; children are positioned in local space.
         rootNode = SKNode()
         rootNode.name = "fishRoot"
         rootNode.zPosition = 100
 
-        // Body sprite: fixed size, centered at rootNode
-        bodySprite = SKSpriteNode(texture: texture)
+        // --- Body sprite ---
+        bodySprite = SKSpriteNode(texture: bodyTexture)
         bodySprite.size = CGSize(width: bodyLength * 1.5, height: bodyLength * 1.5)
         bodySprite.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-
-        // Initialize with identity warp grid
+        bodySprite.zPosition = 0
         let initialGrid = SKWarpGeometryGrid(
             columns: meshDeformer.columns,
             rows: meshDeformer.rows
         )
         bodySprite.warpGeometry = initialGrid
-
         rootNode.addChild(bodySprite)
+
+        // --- Tail fin sprite ---
+        if let tailTex = tailTexture {
+            let tail = SKSpriteNode(texture: tailTex)
+            // Width  = how far the fin sticks out from the peduncle (along fin axis)
+            // Height = fan spread (perpendicular to fin axis)
+            // Ratio 1.30 : 1.20 ≈ 1.083 matches the cropped fish_tail.png aspect ratio (1748:1621 ≈ 1.079)
+            tail.size = CGSize(width: bodyWidth * 1.30, height: bodyWidth * 1.20)
+            // Anchor at the ROOT of the fin (left-center of the image),
+            // so rotation pivots around the peduncle attachment point.
+            tail.anchorPoint = CGPoint(x: 0.0, y: 0.5)
+            // Render IN FRONT of the body (zPosition 1 > body's 0) so the tail
+            // root visually covers the body's thin caudal peduncle end.
+            tail.zPosition = 1
+            rootNode.addChild(tail)
+            tailSprite = tail
+        } else {
+            tailSprite = nil
+        }
     }
 
     // MARK: - Per-Frame Update
@@ -58,36 +95,64 @@ final class FishSpriteAssembler {
     func update(spinePositions: [CGPoint]) {
         guard spinePositions.count >= 2 else { return }
 
-        // Rendering should be robust to transient physics outliers.
-        // We sanitize the render chain only (without mutating physics state).
-        let renderSpine = sanitizeSpinePositions(spinePositions)
+        // Sanitize spine before rendering to suppress physics outliers.
+        let renderSpine  = sanitizeSpinePositions(spinePositions)
         let renderAngles = computeAngles(from: renderSpine)
 
-        // Compute and smooth the render frame to avoid visual "teleport" snaps.
+        // Compute and stabilise the bounding frame for the body sprite.
         let targetFrame = computeSpriteFrame(spinePositions: renderSpine)
-        let frame = stabilizeFrame(targetFrame)
+        let frame       = stabilizeFrame(targetFrame)
 
-        // Position rootNode at center of the bounding frame
+        // --- Body ---
         rootNode.position = CGPoint(x: frame.midX, y: frame.midY)
-
-        // Resize body sprite to cover the bounding frame
-        bodySprite.size = frame.size
+        bodySprite.size   = frame.size
         bodySprite.position = .zero
 
-        // Create and apply the warp grid
         let warpGrid = meshDeformer.createWarpGrid(
             spinePositions: renderSpine,
-            spineAngles: renderAngles,
-            spriteFrame: frame,
-            bodyWidth: bodyWidth
+            spineAngles:    renderAngles,
+            spriteFrame:    frame,
+            bodyWidth:      bodyWidth
         )
         bodySprite.warpGeometry = warpGrid
 
+        // --- Tail fin ---
+        // Attach at the second-to-last spine particle so the tail sprite's root
+        // overlaps the body's thin caudal area, hiding the needle-like peduncle.
+        // (The tail is zPosition=1, so it renders in front of the body at that point.)
+        if let tail = tailSprite, renderSpine.count >= 2 {
+            // Use N-2 so the tail root sits one segment back from the spine tip.
+            let attachIdx   = renderSpine.count - 2
+            let attachPos   = renderSpine[attachIdx]
+            let attachAngle = renderAngles[attachIdx]   // angle toward head
+
+            // Convert world position → rootNode local space.
+            tail.position = CGPoint(
+                x: attachPos.x - frame.midX,
+                y: attachPos.y - frame.midY
+            )
+
+            // Fan opens AWAY from the body (opposite of head direction).
+            let rawAngle = attachAngle + .pi
+
+            // Smooth tail rotation to avoid single-frame angle spikes from physics noise.
+            let smoothed: CGFloat
+            if let prev = smoothedTailAngle {
+                var diff = rawAngle - prev
+                while diff >  .pi { diff -= 2 * .pi }
+                while diff < -.pi { diff += 2 * .pi }
+                smoothed = prev + diff * 0.40
+            } else {
+                smoothed = rawAngle
+            }
+            smoothedTailAngle = smoothed
+            tail.zRotation = smoothed
+        }
     }
 
-    // MARK: - Helpers
+    // MARK: - Frame Helpers
 
-    /// Compute a bounding frame that encompasses all spine positions plus padding for body width.
+    /// Compute a bounding frame encompassing all spine positions plus body-width padding.
     private func computeSpriteFrame(spinePositions: [CGPoint]) -> CGRect {
         guard !spinePositions.isEmpty else {
             return CGRect(x: 0, y: 0, width: bodyLength, height: bodyWidth)
@@ -105,18 +170,12 @@ final class FishSpriteAssembler {
             maxY = max(maxY, pos.y)
         }
 
-        // Padding: body width on all sides to accommodate lateral deformation
         let padding = bodyWidth * 0.7
-        minX -= padding
-        maxX += padding
-        minY -= padding
-        maxY += padding
+        minX -= padding; maxX += padding
+        minY -= padding; maxY += padding
 
-        // Ensure minimum dimensions
-        let width = max(maxX - minX, bodyLength * 0.6)
-        let height = max(maxY - minY, bodyWidth * 1.5)
-
-        // Center the minimum size if needed
+        let width  = max(maxX - minX, bodyLength * 0.6)
+        let height = max(maxY - minY, bodyWidth  * 1.5)
         let cx = (minX + maxX) / 2
         let cy = (minY + maxY) / 2
 
@@ -133,9 +192,7 @@ final class FishSpriteAssembler {
         for i in 1..<positions.count {
             let prev = sanitized[i - 1]
             var curr = positions[i]
-            if !curr.x.isFinite || !curr.y.isFinite {
-                curr = prev
-            }
+            if !curr.x.isFinite || !curr.y.isFinite { curr = prev }
 
             let dx = curr.x - prev.x
             let dy = curr.y - prev.y
@@ -145,14 +202,14 @@ final class FishSpriteAssembler {
                 let scale = maxSegLength / dist
                 curr = CGPoint(x: prev.x + dx * scale, y: prev.y + dy * scale)
             }
-
             sanitized.append(curr)
         }
-
         return sanitized
     }
 
-    /// Recompute segment angles from render spine so warp orientation matches sanitized points.
+    /// Recompute segment angles from render spine.
+    /// Returns the angle at each particle pointing FROM that particle TOWARD the head
+    /// (i.e. atan2(p[i] - p[i+1])).  Adding π gives the tail-outward direction.
     private func computeAngles(from positions: [CGPoint]) -> [CGFloat] {
         guard positions.count >= 2 else { return positions.isEmpty ? [] : [0] }
 
@@ -176,12 +233,12 @@ final class FishSpriteAssembler {
 
         let alpha: CGFloat = 0.22
         let maxCenterStep: CGFloat = FishConfig.spineSegmentLength * 0.8
-        let maxSizeStep: CGFloat = FishConfig.spineSegmentLength * 0.9
+        let maxSizeStep:   CGFloat = FishConfig.spineSegmentLength * 0.9
 
-        let prevCenter = CGPoint(x: previous.midX, y: previous.midY)
-        let targetCenter = CGPoint(x: target.midX, y: target.midY)
-        let dx = targetCenter.x - prevCenter.x
-        let dy = targetCenter.y - prevCenter.y
+        let prevCenter   = CGPoint(x: previous.midX, y: previous.midY)
+        let targetCenter = CGPoint(x: target.midX,   y: target.midY)
+        let dx   = targetCenter.x - prevCenter.x
+        let dy   = targetCenter.y - prevCenter.y
         let dist = sqrt(dx * dx + dy * dy)
 
         let limitedCenter: CGPoint
@@ -199,19 +256,19 @@ final class FishSpriteAssembler {
 
         let limitedWidth = max(
             bodyLength * 0.6,
-            min(previous.width + maxSizeStep, max(previous.width - maxSizeStep, target.width))
+            min(previous.width  + maxSizeStep, max(previous.width  - maxSizeStep, target.width))
         )
         let limitedHeight = max(
-            bodyWidth * 1.5,
+            bodyWidth  * 1.5,
             min(previous.height + maxSizeStep, max(previous.height - maxSizeStep, target.height))
         )
-        let newWidth = previous.width + (limitedWidth - previous.width) * alpha
+        let newWidth  = previous.width  + (limitedWidth  - previous.width)  * alpha
         let newHeight = previous.height + (limitedHeight - previous.height) * alpha
 
         let stabilized = CGRect(
-            x: newCenter.x - newWidth / 2,
+            x: newCenter.x - newWidth  / 2,
             y: newCenter.y - newHeight / 2,
-            width: newWidth,
+            width:  newWidth,
             height: newHeight
         )
         smoothedFrame = stabilized

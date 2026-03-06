@@ -82,11 +82,18 @@ final class AquariumScene: SKScene {
                 headAngle: fish.headAngle,
                 targetPosition: touchTracker.position ?? touchTracker.lastPosition
             )
+            debugOverlay?.updateFeelers(
+                agentPosition: fish.headPosition,
+                velocity: fish.steeringAgent.velocity,
+                speed: fish.steeringAgent.speed,
+                bounds: fish.bounds
+            )
 
             let state = fish.stateManager.currentState.rawValue.uppercased()
-            let fps = String(format: "%.0f", performanceMonitor.averageFPS)
-            let spd = String(format: "%.0f", fish.steeringAgent.speed)
-            stateLabel?.text = "[\(state)]  v=\(spd)  \(fps)fps  deg=\(performanceMonitor.degradationLevel)"
+            let fps   = String(format: "%.0f", performanceMonitor.averageFPS)
+            let spd   = String(format: "%.0f", fish.steeringAgent.speed)
+            let angV  = String(format: "%.1f", fish.steeringAgent.angularVelocity)
+            stateLabel?.text = "[\(state)]  v=\(spd)  ω=\(angV)rad/s  \(fps)fps"
         }
     }
 

@@ -73,9 +73,11 @@ enum FishConfig {
     // MARK: - Warp Grid
 
     /// Columns in the body warp grid.
-    static let bodyWarpColumns = 3
+    /// MeshDeformer takes max(columns, rows) as spine-axis count → 9 spine columns.
+    static let bodyWarpColumns = 5
     /// Rows in the body warp grid.
-    static let bodyWarpRows = 5
+    /// MeshDeformer takes min(columns, rows) as lateral count → 5 lateral rows.
+    static let bodyWarpRows = 9
 
     // MARK: - Physics Timing
 

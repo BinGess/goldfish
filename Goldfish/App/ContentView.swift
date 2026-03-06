@@ -4,14 +4,8 @@ struct ContentView: View {
     @StateObject private var tuningStore = MotionTuningStore()
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            SpriteKitView(tuningStore: tuningStore)
-                .ignoresSafeArea()
-
-            MotionTuningPanel(store: tuningStore)
-                .padding(.top, 12)
-                .padding(.trailing, 12)
-        }
+        SpriteKitView(tuningStore: tuningStore)
+            .ignoresSafeArea()
     }
 }
 
