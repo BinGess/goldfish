@@ -30,6 +30,7 @@
 		60CA3AF700000106 /* FishSpriteAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000026 /* FishSpriteAssembler.swift */; };
 		60CA3AF700000107 /* FishTextureGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000027 /* FishTextureGenerator.swift */; };
 		60CA3AF700000108 /* BackgroundLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000028 /* BackgroundLayer.swift */; };
+		60CA3AF700000109 /* TurnBendController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000029 /* TurnBendController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +58,7 @@
 		60CA3AF700000026 /* FishSpriteAssembler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishSpriteAssembler.swift; sourceTree = "<group>"; };
 		60CA3AF700000027 /* FishTextureGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishTextureGenerator.swift; sourceTree = "<group>"; };
 		60CA3AF700000028 /* BackgroundLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundLayer.swift; sourceTree = "<group>"; };
+		60CA3AF700000029 /* TurnBendController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TurnBendController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +168,7 @@
 				60CA3AF700000021 /* FishStateManager.swift */,
 				60CA3AF700000022 /* FishMotionDriver.swift */,
 				60CA3AF700000023 /* GoldfishEntity.swift */,
+				60CA3AF700000029 /* TurnBendController.swift */,
 			);
 			path = Fish;
 			sourceTree = "<group>";
@@ -287,6 +290,7 @@
 				60CA3AF700000106 /* FishSpriteAssembler.swift in Sources */,
 				60CA3AF700000107 /* FishTextureGenerator.swift in Sources */,
 				60CA3AF700000108 /* BackgroundLayer.swift in Sources */,
+				60CA3AF700000109 /* TurnBendController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -104,6 +104,12 @@ enum FishConfig {
     /// Lateral force applied to mid-body spine particles during turns (pts/s², pre-multiplied by dt).
     /// Creates active C-shape body flexing into the turn direction.
     static let turnBodyFlexForce: CGFloat = 600
+    /// Normalized turn-rate threshold above which active body bend begins.
+    static let turnBendThresholdRatio: CGFloat = 0.18
+    /// Maximum per-second growth of the propagated turn signal.
+    static let turnBendRiseRate: CGFloat = 2.8
+    /// Maximum per-second decay of the propagated turn signal.
+    static let turnBendDecayRate: CGFloat = 4.8
 
     // MARK: - Performance
 

@@ -12,6 +12,7 @@ final class GoldfishEntity {
     let motionDriver: FishMotionDriver
     let stateManager: FishStateManager
     private var wanderState = WanderState()
+    private var turnBendController = TurnBendController()
 
     /// Visual rendering (nil until setupRendering is called).
     private(set) var spriteAssembler: FishSpriteAssembler?
@@ -246,35 +247,20 @@ final class GoldfishEntity {
     /// This is applied as a Verlet force (same pathway as oscillation), accumulated
     /// before spineChain.simulate() processes them each tick.
     private func applyTurnBodyFlex(dt: TimeInterval) {
-        let angVel = steeringAgent.angularVelocity
-        // Only engage during turns exceeding 20% of max turn rate to avoid noise.
-        let threshold = FishConfig.maxTurnRate * 0.20
-        guard abs(angVel) > threshold else { return }
-
-        // Normalized turn intensity: 0 = gentle curve, 1 = max rate turn.
-        let intensity = min(abs(angVel) / FishConfig.maxTurnRate, 1.0)
-
-        // Lateral direction = perpendicular to fish heading, toward inside of turn.
-        // Positive angVel (CCW/left turn) → flex left; negative → flex right.
-        let headAngle = spineChain.headAngle
-        let flexSign: CGFloat = angVel > 0 ? 1.0 : -1.0
-        let lateralX = -sin(headAngle) * flexSign
-        let lateralY =  cos(headAngle) * flexSign
-
+        let turnSignal = turnBendController.update(
+            angularVelocity: steeringAgent.angularVelocity,
+            dt: dt
+        )
+        guard abs(turnSignal) > 0.001 else { return }
         let dtf = CGFloat(dt)
-        // Quadratic scaling so effect is gentle at moderate turns, strong only at sharp turns.
-        let baseForce = FishConfig.turnBodyFlexForce * intensity * intensity * dtf
-
-        // Apply to mid-body particles (2–5) with a bell-curve gradient:
-        // zero at the neck and tail connection points, peak at the belly center.
-        let startIdx = 2
-        let endIdx   = min(5, spineChain.particles.count - 1)
-        for i in startIdx...endIdx {
-            let t    = CGFloat(i - startIdx) / CGFloat(endIdx - startIdx)
-            let bell = sin(t * .pi) // 0 at ends, 1 at midpoint
+        let baseForce = FishConfig.turnBodyFlexForce * dtf
+        for i in 1..<(spineChain.particles.count - 1) {
+            let scale = turnBendController.forceScale(at: i, particleCount: spineChain.particles.count)
+            guard abs(scale) > 0.0001 else { continue }
+            let lateral = TurnBendController.localLateralDirection(spine: spineChain, index: i)
             spineChain.particles[i].applyForce(
-                CGVector(dx: lateralX * baseForce * bell,
-                         dy: lateralY * baseForce * bell)
+                CGVector(dx: lateral.dx * baseForce * scale,
+                         dy: lateral.dy * baseForce * scale)
             )
         }
     }
@@ -293,12 +279,14 @@ final class GoldfishEntity {
     // MARK: - Helpers
 
     private func clampAgentToBounds() {
-        guard bounds != .zero else { return }
-        let margin: CGFloat = 20
-        steeringAgent.position.x = max(bounds.minX + margin,
-                                        min(bounds.maxX - margin, steeringAgent.position.x))
-        steeringAgent.position.y = max(bounds.minY + margin,
-                                        min(bounds.maxY - margin, steeringAgent.position.y))
+        let clamped = TurnStability.clampToBounds(
+            position: steeringAgent.position,
+            velocity: steeringAgent.velocity,
+            bounds: bounds,
+            margin: 20
+        )
+        steeringAgent.position = clamped.position
+        steeringAgent.velocity = clamped.velocity
     }
 
     private func distanceTo(_ point: CGPoint) -> CGFloat {

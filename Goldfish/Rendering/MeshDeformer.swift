@@ -189,11 +189,13 @@ final class MeshDeformer {
         if angleDiff > .pi { angleDiff -= 2 * .pi }
         if angleDiff < -.pi { angleDiff += 2 * .pi }
 
-        // Reduce body width when curvature is high
-        // At max bend angle (~0.7 rad / ~40°), reduce to 70% width
-        let curvature = abs(angleDiff) / FishConfig.maxSpineBendAngle
-        let reduction = max(0.7, 1.0 - curvature * 0.3)
-        return reduction
+        return Self.curvatureReduction(angleDelta: angleDiff)
+    }
+
+    static func curvatureReduction(angleDelta: CGFloat) -> CGFloat {
+        let normalized = min(abs(angleDelta) / max(FishConfig.maxSpineBendAngle, 0.001), 1.15)
+        let reduction = 1.0 - normalized * normalized * 0.38
+        return max(0.64, reduction)
     }
 
     /// Create a warp grid from the current spine state.
