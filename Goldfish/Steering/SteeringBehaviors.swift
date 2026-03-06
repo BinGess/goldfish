@@ -136,6 +136,48 @@ enum SteeringBehaviors {
         force.dy += repulsion(dist: bottom, velToward: -vel.dy)
         force.dy -= repulsion(dist: top,    velToward:  vel.dy)
 
+        // --- Look-ahead feelers ---
+        // Three rays projected from current position: straight ahead + two at ±33°.
+        // They sense walls earlier than proximity repulsion, allowing the fish to begin
+        // curving well before entering the danger zone — producing a graceful arc turn.
+        guard speed > 8 else { return force }
+
+        let headingAngle = atan2(vel.dy, vel.dx)
+        let feelerReach = speed * FishConfig.wallFeelerTime
+        let feelerZone  = FishConfig.wallMargin * FishConfig.wallFeelerMarginFraction
+        let feelerAngle = FishConfig.wallFeelerAngle
+
+        // (heading offset, length fraction, force weight)
+        let feelers: [(CGFloat, CGFloat, CGFloat)] = [
+            (0,             1.00, 1.0),   // center — full reach
+            ( feelerAngle,  0.55, 0.45),  // left side
+            (-feelerAngle,  0.55, 0.45),  // right side
+        ]
+
+        // Quadratic ease-in repulsion for a feeler endpoint approaching one wall.
+        // dist: distance from feeler tip to the boundary (positive = inside bounds).
+        func feelerRepulsion(dist: CGFloat, weight: CGFloat) -> CGFloat {
+            guard dist < feelerZone && dist > 0 else { return 0 }
+            let t = 1.0 - dist / feelerZone
+            return t * t * maxF * weight
+        }
+
+        for (offset, lengthFraction, weight) in feelers {
+            let angle = headingAngle + offset
+            let reach = feelerReach * lengthFraction
+            let fx = agent.position.x + cos(angle) * reach
+            let fy = agent.position.y + sin(angle) * reach
+
+            // left wall  → push right (+dx)
+            force.dx += feelerRepulsion(dist: fx - bounds.minX,  weight: weight)
+            // right wall → push left (-dx)
+            force.dx -= feelerRepulsion(dist: bounds.maxX - fx,  weight: weight)
+            // bottom     → push up (+dy)
+            force.dy += feelerRepulsion(dist: fy - bounds.minY,  weight: weight)
+            // top        → push down (-dy)
+            force.dy -= feelerRepulsion(dist: bounds.maxY - fy,  weight: weight)
+        }
+
         return force
     }
 

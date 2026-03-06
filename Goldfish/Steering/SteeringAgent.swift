@@ -18,6 +18,9 @@ final class SteeringAgent {
     private var smoothedSteeringForce: CGVector = .zero
     /// Last reliable heading used when speed is very low.
     private var lastHeadingVector: CGVector = CGVector(dx: 1, dy: 0)
+    /// Angular velocity this frame (rad/s). Positive = CCW, negative = CW.
+    /// Exposed so body-flex can read turn intensity without coupling to steering internals.
+    private(set) var angularVelocity: CGFloat = 0
 
     init(position: CGPoint) {
         self.position = position
@@ -66,6 +69,7 @@ final class SteeringAgent {
 
         // Turn rate limiting: constrain the angle change per tick
         let currentSpeed = speed
+        var frameAngularVelocity: CGFloat = 0
         if currentSpeed > 1.0 {
             let currentAngle = atan2(velocity.dy, velocity.dx)
             let newSpeed = sqrt(newVx * newVx + newVy * newVy)
@@ -80,14 +84,18 @@ final class SteeringAgent {
                 let clampedDiff = max(-maxAngleChange, min(maxAngleChange, angleDiff))
                 let finalAngle = currentAngle + clampedDiff
 
-                // Fish naturally slow down during sharp turns (quadratic falloff)
+                // Fish slow down meaningfully during sharp turns.
+                // Raised from 0.3 → maxTurnSpeedReduction (0.55) for more realistic deceleration.
                 let turnIntensity = abs(clampedDiff) / maxAngleChange
-                let turnSpeedScale = 1.0 - turnIntensity * turnIntensity * 0.3
+                let turnSpeedScale = 1.0 - turnIntensity * turnIntensity * FishConfig.maxTurnSpeedReduction
+
+                frameAngularVelocity = dtf > 0 ? clampedDiff / dtf : 0
 
                 newVx = cos(finalAngle) * newSpeed * turnSpeedScale
                 newVy = sin(finalAngle) * newSpeed * turnSpeedScale
             }
         }
+        angularVelocity = frameAngularVelocity
 
         velocity.dx = newVx
         velocity.dy = newVy

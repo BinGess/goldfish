@@ -84,6 +84,25 @@ enum FishConfig {
     /// Maximum particle velocity (points/second) to prevent explosion.
     static let maxParticleSpeed: CGFloat = 500
 
+    // MARK: - Wall Feelers
+
+    /// Look-ahead time for feeler-based wall detection (seconds).
+    /// Fish "sees" this far ahead and starts curving before proximity repulsion kicks in.
+    static let wallFeelerTime: CGFloat = 0.85
+    /// Side feeler angle offset from heading (radians, ≈33°).
+    static let wallFeelerAngle: CGFloat = .pi / 5.5
+    /// Feeler trigger zone as a fraction of wallMargin.
+    static let wallFeelerMarginFraction: CGFloat = 0.55
+
+    // MARK: - Turn Feel
+
+    /// Turn speed reduction factor [0,1]. Higher = more speed loss during sharp turns.
+    /// Was hardcoded 0.3; increased to 0.55 for more realistic deceleration.
+    static let maxTurnSpeedReduction: CGFloat = 0.55
+    /// Lateral force applied to mid-body spine particles during turns (pts/s², pre-multiplied by dt).
+    /// Creates active C-shape body flexing into the turn direction.
+    static let turnBodyFlexForce: CGFloat = 600
+
     // MARK: - Performance
 
     /// FPS threshold to trigger degradation.

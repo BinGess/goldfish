@@ -101,6 +101,9 @@ final class GoldfishEntity {
         // 7. Apply oscillation forces
         applyOscillation(dt: dt)
 
+        // 7b. Apply turn body flex: mid-body bends toward inside of turn (C-shape)
+        applyTurnBodyFlex(dt: dt)
+
         // 8. Simulate spine physics
         spineChain.simulate(dt: dt)
 
@@ -221,6 +224,46 @@ final class GoldfishEntity {
             (targetFrequency - motionDriver.frequencyMultiplier) * smoothing
         motionDriver.amplitudeMultiplier +=
             (targetAmplitude - motionDriver.amplitudeMultiplier) * smoothing
+    }
+
+    // MARK: - Turn Body Flex
+
+    /// Push mid-body spine particles toward the inside of the current turn.
+    /// Real fish actively flex their whole body during sharp turns, forming a C-shape.
+    /// This is applied as a Verlet force (same pathway as oscillation), accumulated
+    /// before spineChain.simulate() processes them each tick.
+    private func applyTurnBodyFlex(dt: TimeInterval) {
+        let angVel = steeringAgent.angularVelocity
+        // Only engage during turns exceeding 20% of max turn rate to avoid noise.
+        let threshold = FishConfig.maxTurnRate * 0.20
+        guard abs(angVel) > threshold else { return }
+
+        // Normalized turn intensity: 0 = gentle curve, 1 = max rate turn.
+        let intensity = min(abs(angVel) / FishConfig.maxTurnRate, 1.0)
+
+        // Lateral direction = perpendicular to fish heading, toward inside of turn.
+        // Positive angVel (CCW/left turn) → flex left; negative → flex right.
+        let headAngle = spineChain.headAngle
+        let flexSign: CGFloat = angVel > 0 ? 1.0 : -1.0
+        let lateralX = -sin(headAngle) * flexSign
+        let lateralY =  cos(headAngle) * flexSign
+
+        let dtf = CGFloat(dt)
+        // Quadratic scaling so effect is gentle at moderate turns, strong only at sharp turns.
+        let baseForce = FishConfig.turnBodyFlexForce * intensity * intensity * dtf
+
+        // Apply to mid-body particles (2–5) with a bell-curve gradient:
+        // zero at the neck and tail connection points, peak at the belly center.
+        let startIdx = 2
+        let endIdx   = min(5, spineChain.particles.count - 1)
+        for i in startIdx...endIdx {
+            let t    = CGFloat(i - startIdx) / CGFloat(endIdx - startIdx)
+            let bell = sin(t * .pi) // 0 at ends, 1 at midpoint
+            spineChain.particles[i].applyForce(
+                CGVector(dx: lateralX * baseForce * bell,
+                         dy: lateralY * baseForce * bell)
+            )
+        }
     }
 
     // MARK: - Oscillation
