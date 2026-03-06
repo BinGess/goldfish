@@ -1,0 +1,495 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		60CA3AF700000001 /* GoldfishApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000011 /* GoldfishApp.swift */; };
+		60CA3AF700000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000012 /* ContentView.swift */; };
+		60CA3AF700000003 /* SpriteKitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000013 /* SpriteKitView.swift */; };
+		60CA3AF700000004 /* Time.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000014 /* Time.swift */; };
+		60CA3AF700000005 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000015 /* Constants.swift */; };
+		60CA3AF700000006 /* PerformanceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000016 /* PerformanceMonitor.swift */; };
+		60CA3AF700000007 /* VerletParticle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000017 /* VerletParticle.swift */; };
+		60CA3AF700000008 /* DistanceConstraint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000018 /* DistanceConstraint.swift */; };
+		60CA3AF700000009 /* SpineChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000019 /* SpineChain.swift */; };
+		60CA3AF70000000A /* AquariumScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF70000001A /* AquariumScene.swift */; };
+		60CA3AF70000000B /* DebugOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF70000001B /* DebugOverlay.swift */; };
+		60CA3AF70000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 60CA3AF70000001C /* Assets.xcassets */; };
+		60CA3AF70000000D /* SteeringAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF70000001D /* SteeringAgent.swift */; };
+		60CA3AF70000000E /* SteeringBehaviors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF70000001E /* SteeringBehaviors.swift */; };
+		60CA3AF70000000F /* BehaviorCombiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF70000001F /* BehaviorCombiner.swift */; };
+		60CA3AF700000101 /* FishStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000021 /* FishStateManager.swift */; };
+		60CA3AF700000102 /* FishMotionDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000022 /* FishMotionDriver.swift */; };
+		60CA3AF700000103 /* GoldfishEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000023 /* GoldfishEntity.swift */; };
+		60CA3AF700000104 /* TouchTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000024 /* TouchTracker.swift */; };
+		60CA3AF700000105 /* MeshDeformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000025 /* MeshDeformer.swift */; };
+		60CA3AF700000106 /* FishSpriteAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000026 /* FishSpriteAssembler.swift */; };
+		60CA3AF700000107 /* FishTextureGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000027 /* FishTextureGenerator.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		60CA3AF700000011 /* GoldfishApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldfishApp.swift; sourceTree = "<group>"; };
+		60CA3AF700000012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		60CA3AF700000013 /* SpriteKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpriteKitView.swift; sourceTree = "<group>"; };
+		60CA3AF700000014 /* Time.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Time.swift; sourceTree = "<group>"; };
+		60CA3AF700000015 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		60CA3AF700000016 /* PerformanceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMonitor.swift; sourceTree = "<group>"; };
+		60CA3AF700000017 /* VerletParticle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerletParticle.swift; sourceTree = "<group>"; };
+		60CA3AF700000018 /* DistanceConstraint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceConstraint.swift; sourceTree = "<group>"; };
+		60CA3AF700000019 /* SpineChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpineChain.swift; sourceTree = "<group>"; };
+		60CA3AF70000001A /* AquariumScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AquariumScene.swift; sourceTree = "<group>"; };
+		60CA3AF70000001B /* DebugOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugOverlay.swift; sourceTree = "<group>"; };
+		60CA3AF70000001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		60CA3AF700000020 /* Goldfish.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Goldfish.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		60CA3AF70000001D /* SteeringAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteeringAgent.swift; sourceTree = "<group>"; };
+		60CA3AF70000001E /* SteeringBehaviors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteeringBehaviors.swift; sourceTree = "<group>"; };
+		60CA3AF70000001F /* BehaviorCombiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BehaviorCombiner.swift; sourceTree = "<group>"; };
+		60CA3AF700000021 /* FishStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishStateManager.swift; sourceTree = "<group>"; };
+		60CA3AF700000022 /* FishMotionDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishMotionDriver.swift; sourceTree = "<group>"; };
+		60CA3AF700000023 /* GoldfishEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldfishEntity.swift; sourceTree = "<group>"; };
+		60CA3AF700000024 /* TouchTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchTracker.swift; sourceTree = "<group>"; };
+		60CA3AF700000025 /* MeshDeformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshDeformer.swift; sourceTree = "<group>"; };
+		60CA3AF700000026 /* FishSpriteAssembler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishSpriteAssembler.swift; sourceTree = "<group>"; };
+		60CA3AF700000027 /* FishTextureGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishTextureGenerator.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		60CA3AF700000030 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		60CA3AF700000040 = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000041 /* Goldfish */,
+				60CA3AF700000050 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		60CA3AF700000041 /* Goldfish */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000042 /* App */,
+				60CA3AF700000043 /* Core */,
+				60CA3AF700000044 /* Physics */,
+				60CA3AF700000048 /* Steering */,
+				60CA3AF700000049 /* Fish */,
+				60CA3AF70000004A /* Interaction */,
+				60CA3AF70000004B /* Rendering */,
+				60CA3AF700000045 /* Scene */,
+				60CA3AF700000046 /* Debug */,
+				60CA3AF700000047 /* Resources */,
+			);
+			path = Goldfish;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000042 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000011 /* GoldfishApp.swift */,
+				60CA3AF700000012 /* ContentView.swift */,
+				60CA3AF700000013 /* SpriteKitView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000043 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000014 /* Time.swift */,
+				60CA3AF700000015 /* Constants.swift */,
+				60CA3AF700000016 /* PerformanceMonitor.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000044 /* Physics */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000017 /* VerletParticle.swift */,
+				60CA3AF700000018 /* DistanceConstraint.swift */,
+				60CA3AF700000019 /* SpineChain.swift */,
+			);
+			path = Physics;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000045 /* Scene */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF70000001A /* AquariumScene.swift */,
+			);
+			path = Scene;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000046 /* Debug */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF70000001B /* DebugOverlay.swift */,
+			);
+			path = Debug;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000047 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF70000001C /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000048 /* Steering */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF70000001D /* SteeringAgent.swift */,
+				60CA3AF70000001E /* SteeringBehaviors.swift */,
+				60CA3AF70000001F /* BehaviorCombiner.swift */,
+			);
+			path = Steering;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000049 /* Fish */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000021 /* FishStateManager.swift */,
+				60CA3AF700000022 /* FishMotionDriver.swift */,
+				60CA3AF700000023 /* GoldfishEntity.swift */,
+			);
+			path = Fish;
+			sourceTree = "<group>";
+		};
+		60CA3AF70000004A /* Interaction */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000024 /* TouchTracker.swift */,
+			);
+			path = Interaction;
+			sourceTree = "<group>";
+		};
+		60CA3AF70000004B /* Rendering */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000025 /* MeshDeformer.swift */,
+				60CA3AF700000026 /* FishSpriteAssembler.swift */,
+				60CA3AF700000027 /* FishTextureGenerator.swift */,
+			);
+			path = Rendering;
+			sourceTree = "<group>";
+		};
+		60CA3AF700000050 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				60CA3AF700000020 /* Goldfish.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		60CA3AF700000060 /* Goldfish */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60CA3AF700000080 /* Build configuration list for PBXNativeTarget "Goldfish" */;
+			buildPhases = (
+				60CA3AF700000061 /* Sources */,
+				60CA3AF700000030 /* Frameworks */,
+				60CA3AF700000062 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Goldfish;
+			productName = Goldfish;
+			productReference = 60CA3AF700000020 /* Goldfish.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		60CA3AF700000070 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					60CA3AF700000060 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = 60CA3AF700000090 /* Build configuration list for PBXProject "Goldfish" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 60CA3AF700000040;
+			productRefGroup = 60CA3AF700000050 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				60CA3AF700000060 /* Goldfish */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		60CA3AF700000062 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60CA3AF70000000C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		60CA3AF700000061 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60CA3AF700000001 /* GoldfishApp.swift in Sources */,
+				60CA3AF700000002 /* ContentView.swift in Sources */,
+				60CA3AF700000003 /* SpriteKitView.swift in Sources */,
+				60CA3AF700000004 /* Time.swift in Sources */,
+				60CA3AF700000005 /* Constants.swift in Sources */,
+				60CA3AF700000006 /* PerformanceMonitor.swift in Sources */,
+				60CA3AF700000007 /* VerletParticle.swift in Sources */,
+				60CA3AF700000008 /* DistanceConstraint.swift in Sources */,
+				60CA3AF700000009 /* SpineChain.swift in Sources */,
+				60CA3AF70000000A /* AquariumScene.swift in Sources */,
+				60CA3AF70000000B /* DebugOverlay.swift in Sources */,
+				60CA3AF70000000D /* SteeringAgent.swift in Sources */,
+				60CA3AF70000000E /* SteeringBehaviors.swift in Sources */,
+				60CA3AF70000000F /* BehaviorCombiner.swift in Sources */,
+				60CA3AF700000101 /* FishStateManager.swift in Sources */,
+				60CA3AF700000102 /* FishMotionDriver.swift in Sources */,
+				60CA3AF700000103 /* GoldfishEntity.swift in Sources */,
+				60CA3AF700000104 /* TouchTracker.swift in Sources */,
+				60CA3AF700000105 /* MeshDeformer.swift in Sources */,
+				60CA3AF700000106 /* FishSpriteAssembler.swift in Sources */,
+				60CA3AF700000107 /* FishTextureGenerator.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		60CA3AF700000081 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bigfish.goldfish;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1";
+			};
+			name = Debug;
+		};
+		60CA3AF700000082 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bigfish.goldfish;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1";
+			};
+			name = Release;
+		};
+		60CA3AF700000091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		60CA3AF700000092 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		60CA3AF700000080 /* Build configuration list for PBXNativeTarget "Goldfish" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60CA3AF700000081 /* Debug */,
+				60CA3AF700000082 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		60CA3AF700000090 /* Build configuration list for PBXProject "Goldfish" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60CA3AF700000091 /* Debug */,
+				60CA3AF700000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 60CA3AF700000070 /* Project object */;
+}
