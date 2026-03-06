@@ -29,6 +29,7 @@
 		60CA3AF700000105 /* MeshDeformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000025 /* MeshDeformer.swift */; };
 		60CA3AF700000106 /* FishSpriteAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000026 /* FishSpriteAssembler.swift */; };
 		60CA3AF700000107 /* FishTextureGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000027 /* FishTextureGenerator.swift */; };
+		60CA3AF700000108 /* BackgroundLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CA3AF700000028 /* BackgroundLayer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,6 +56,7 @@
 		60CA3AF700000025 /* MeshDeformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshDeformer.swift; sourceTree = "<group>"; };
 		60CA3AF700000026 /* FishSpriteAssembler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishSpriteAssembler.swift; sourceTree = "<group>"; };
 		60CA3AF700000027 /* FishTextureGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishTextureGenerator.swift; sourceTree = "<group>"; };
+		60CA3AF700000028 /* BackgroundLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundLayer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -127,6 +129,7 @@
 			isa = PBXGroup;
 			children = (
 				60CA3AF70000001A /* AquariumScene.swift */,
+				60CA3AF700000028 /* BackgroundLayer.swift */,
 			);
 			path = Scene;
 			sourceTree = "<group>";
@@ -283,6 +286,7 @@
 				60CA3AF700000105 /* MeshDeformer.swift in Sources */,
 				60CA3AF700000106 /* FishSpriteAssembler.swift in Sources */,
 				60CA3AF700000107 /* FishTextureGenerator.swift in Sources */,
+				60CA3AF700000108 /* BackgroundLayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
