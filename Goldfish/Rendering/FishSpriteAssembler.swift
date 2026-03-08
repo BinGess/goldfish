@@ -1,88 +1,193 @@
 import SpriteKit
 
-/// Assembles and manages the layered fish sprite with warp-grid deformation.
-///
-/// Layer architecture:
-///   - bodySprite  (zPosition  0): oval body textured via SKWarpGeometryGrid.
-///   - tailSprite  (zPosition +1): separate tail-fin sprite anchored at the N-2 spine
-///                                 particle. Renders IN FRONT to cover the body's thin
-///                                 caudal peduncle end. NOT warped; rotates per frame.
+/// Assembles the fish from rigid segments instead of warping one large body texture.
+/// This keeps the head stable during turns and lets the body bend as multiple bones.
 final class FishSpriteAssembler {
+
+    private struct BodySegmentSpec {
+        let name: String
+        let assetName: String
+        let cropStart: CGFloat
+        let cropEnd: CGFloat
+        let spanStart: CGFloat
+        let spanEnd: CGFloat
+        let rotationT: CGFloat
+        let heightScale: CGFloat
+        let overlapRatio: CGFloat
+        let centerOffsetRatio: CGFloat
+        let anchorX: CGFloat
+        let attachmentT: CGFloat?
+        let attachmentInsetRatio: CGFloat
+        let zPosition: CGFloat
+        let smoothing: CGFloat
+    }
+
+    private struct BodySegmentNode {
+        let spec: BodySegmentSpec
+        let sprite: SKSpriteNode
+    }
+
+    private enum Layout {
+        static let bodySegments: [BodySegmentSpec] = [
+            BodySegmentSpec(
+                name: "head",
+                assetName: "fish_head",
+                cropStart: 0.71,
+                cropEnd: 1.00,
+                spanStart: 0.00,
+                spanEnd: 0.19,
+                rotationT: 0.03,
+                heightScale: 0.90,
+                overlapRatio: 0.08,
+                centerOffsetRatio: -0.01,
+                anchorX: 0.0,
+                attachmentT: 0.19,
+                attachmentInsetRatio: -0.03,
+                zPosition: 7,
+                smoothing: 0.14
+            ),
+            BodySegmentSpec(
+                name: "shoulder",
+                assetName: "fish_shoulder",
+                cropStart: 0.50,
+                cropEnd: 0.78,
+                spanStart: 0.09,
+                spanEnd: 0.40,
+                rotationT: 0.24,
+                heightScale: 1.08,
+                overlapRatio: 0.26,
+                centerOffsetRatio: 0.03,
+                anchorX: 0.5,
+                attachmentT: nil,
+                attachmentInsetRatio: 0,
+                zPosition: 5,
+                smoothing: 0.20
+            ),
+            BodySegmentSpec(
+                name: "midBody",
+                assetName: "fish_mid",
+                cropStart: 0.31,
+                cropEnd: 0.56,
+                spanStart: 0.38,
+                spanEnd: 0.62,
+                rotationT: 0.50,
+                heightScale: 1.04,
+                overlapRatio: 0.18,
+                centerOffsetRatio: 0.02,
+                anchorX: 0.5,
+                attachmentT: nil,
+                attachmentInsetRatio: 0,
+                zPosition: 3,
+                smoothing: 0.24
+            ),
+            BodySegmentSpec(
+                name: "rearBody",
+                assetName: "fish_rear",
+                cropStart: 0.16,
+                cropEnd: 0.37,
+                spanStart: 0.58,
+                spanEnd: 0.78,
+                rotationT: 0.69,
+                heightScale: 0.60,
+                overlapRatio: 0.10,
+                centerOffsetRatio: 0.00,
+                anchorX: 0.5,
+                attachmentT: nil,
+                attachmentInsetRatio: 0,
+                zPosition: 2,
+                smoothing: 0.28
+            ),
+            BodySegmentSpec(
+                name: "peduncle",
+                assetName: "fish_peduncle",
+                cropStart: 0.00,
+                cropEnd: 0.23,
+                spanStart: 0.78,
+                spanEnd: 0.88,
+                rotationT: 0.86,
+                heightScale: 0.26,
+                overlapRatio: 0.08,
+                centerOffsetRatio: 0.00,
+                anchorX: 0.5,
+                attachmentT: nil,
+                attachmentInsetRatio: 0,
+                zPosition: 1,
+                smoothing: 0.30
+            )
+        ]
+
+        static let tailWidthScale: CGFloat = 0.64
+        static let tailHeightScale: CGFloat = 1.18
+        static let tailOverlapRatio: CGFloat = 0.24
+        static let tailSmoothing: CGFloat = 0.24
+        static let tailZPosition: CGFloat = 2.5
+    }
 
     // MARK: - Sprite Nodes
 
-    /// Root node containing all fish visual elements.
     let rootNode: SKNode
 
-    /// Body sprite with warp geometry applied.
-    private let bodySprite: SKSpriteNode
-
-    /// Tail fin sprite — independent of warp, follows last spine segment angle.
+    private let bodySegments: [BodySegmentNode]
     private let tailSprite: SKSpriteNode?
-
-    /// Mesh deformer that maps spine → warp grid.
-    private let meshDeformer: MeshDeformer
 
     // MARK: - Dimensions
 
     let bodyWidth: CGFloat
     let bodyLength: CGFloat
 
-    // MARK: - Smoothing State
+    // MARK: - State
 
-    /// Smoothed bounding frame to suppress rendering jitter.
-    private var smoothedFrame: CGRect?
-
-    /// Smoothed tail angle to prevent per-frame rotation jitter.
+    private var smoothedSegmentAngles: [CGFloat?]
     private var smoothedTailAngle: CGFloat?
 
     // MARK: - Init
 
-    /// - Parameters:
-    ///   - bodyTexture: Texture for the fish body (head-left, tail-right, no caudal fin).
-    ///   - tailTexture: Optional separate caudal fin texture (root at left-center, fan opens right).
-    ///   - bodyLength:  Spine arc length in points.
-    ///   - bodyWidth:   Maximum body width in points.
     init(
-        bodyTexture: SKTexture,
+        bodyTexture: SKTexture? = nil,
+        bodySegmentTextures: [String: SKTexture] = [:],
         tailTexture: SKTexture? = nil,
         bodyLength: CGFloat = 240,
         bodyWidth: CGFloat = 90
     ) {
         self.bodyLength = bodyLength
-        self.bodyWidth  = bodyWidth
-        self.meshDeformer = MeshDeformer()
+        self.bodyWidth = bodyWidth
 
-        // Root node at world origin; children are positioned in local space.
         rootNode = SKNode()
         rootNode.name = "fishRoot"
         rootNode.zPosition = 100
 
-        // --- Body sprite ---
-        bodySprite = SKSpriteNode(texture: bodyTexture)
-        bodySprite.size = CGSize(width: bodyLength * 1.5, height: bodyLength * 1.5)
-        bodySprite.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        bodySprite.zPosition = 0
-        let initialGrid = SKWarpGeometryGrid(
-            columns: meshDeformer.columns,
-            rows: meshDeformer.rows
-        )
-        bodySprite.warpGeometry = initialGrid
-        rootNode.addChild(bodySprite)
+        var segmentNodes: [BodySegmentNode] = []
+        segmentNodes.reserveCapacity(Layout.bodySegments.count)
 
-        // --- Tail fin sprite ---
-        if let tailTex = tailTexture {
-            let tail = SKSpriteNode(texture: tailTex)
-            // Width  = how far the fin sticks out from the peduncle (along fin axis)
-            // Height = fan spread (perpendicular to fin axis)
-            // Ratio 1.30 : 1.20 ≈ 1.083 matches the cropped fish_tail.png aspect ratio (1748:1621 ≈ 1.079)
-            tail.size = CGSize(width: bodyWidth * 1.30, height: bodyWidth * 1.20)
-            // Anchor at the ROOT of the fin (left-center of the image),
-            // so rotation pivots around the peduncle attachment point.
-            tail.anchorPoint = CGPoint(x: 0.0, y: 0.5)
-            // Render IN FRONT of the body (zPosition 1 > body's 0) so the tail
-            // root visually covers the body's thin caudal peduncle end.
-            tail.zPosition = 1
+        for spec in Layout.bodySegments {
+            let texture: SKTexture
+            if let segmentTexture = bodySegmentTextures[spec.assetName] {
+                texture = segmentTexture
+            } else if let bodyTexture {
+                texture = Self.croppedTexture(
+                    from: bodyTexture,
+                    start: spec.cropStart,
+                    end: spec.cropEnd
+                )
+            } else {
+                preconditionFailure("Missing texture for segment \(spec.assetName)")
+            }
+            let sprite = SKSpriteNode(texture: texture)
+            sprite.name = spec.name
+            sprite.anchorPoint = CGPoint(x: spec.anchorX, y: 0.5)
+            sprite.zPosition = spec.zPosition
+            rootNode.addChild(sprite)
+            segmentNodes.append(BodySegmentNode(spec: spec, sprite: sprite))
+        }
+
+        bodySegments = segmentNodes
+        smoothedSegmentAngles = Array(repeating: nil, count: segmentNodes.count)
+
+        if let tailTexture {
+            let tail = SKSpriteNode(texture: tailTexture)
+            tail.name = "tail"
+            tail.anchorPoint = CGPoint(x: 1.0, y: 0.5)
+            tail.zPosition = Layout.tailZPosition
             rootNode.addChild(tail)
             tailSprite = tail
         } else {
@@ -95,183 +200,221 @@ final class FishSpriteAssembler {
     func update(spinePositions: [CGPoint]) {
         guard spinePositions.count >= 2 else { return }
 
-        // Sanitize spine before rendering to suppress physics outliers.
-        let renderSpine  = sanitizeSpinePositions(spinePositions)
+        let renderSpine = sanitizeSpinePositions(spinePositions)
         let renderAngles = computeAngles(from: renderSpine)
 
-        // Compute and stabilise the bounding frame for the body sprite.
-        let targetFrame = computeSpriteFrame(spinePositions: renderSpine)
-        let frame       = stabilizeFrame(targetFrame)
+        rootNode.position = .zero
 
-        // --- Body ---
-        rootNode.position = CGPoint(x: frame.midX, y: frame.midY)
-        bodySprite.size   = frame.size
-        bodySprite.position = .zero
+        for index in bodySegments.indices {
+            let segment = bodySegments[index]
+            let spec = segment.spec
 
-        let warpGrid = meshDeformer.createWarpGrid(
-            spinePositions: renderSpine,
-            spineAngles:    renderAngles,
-            spriteFrame:    frame,
-            bodyWidth:      bodyWidth
-        )
-        bodySprite.warpGeometry = warpGrid
-
-        // --- Tail fin ---
-        // Attach at the second-to-last spine particle so the tail sprite's root
-        // overlaps the body's thin caudal area, hiding the needle-like peduncle.
-        // (The tail is zPosition=1, so it renders in front of the body at that point.)
-        if let tail = tailSprite, renderSpine.count >= 2 {
-            // Use N-2 so the tail root sits one segment back from the spine tip.
-            let attachIdx   = renderSpine.count - 2
-            let attachPos   = renderSpine[attachIdx]
-            let attachAngle = renderAngles[attachIdx]   // angle toward head
-
-            // Convert world position → rootNode local space.
-            tail.position = CGPoint(
-                x: attachPos.x - frame.midX,
-                y: attachPos.y - frame.midY
-            )
-
-            // Fan opens AWAY from the body (opposite of head direction).
-            let rawAngle = attachAngle + .pi
-
-            // Smooth tail rotation to avoid single-frame angle spikes from physics noise.
-            let smoothed: CGFloat
-            if let prev = smoothedTailAngle {
-                var diff = rawAngle - prev
-                while diff >  .pi { diff -= 2 * .pi }
-                while diff < -.pi { diff += 2 * .pi }
-                smoothed = prev + diff * 0.40
+            let rawAngle = interpolateAngle(at: spec.rotationT, angles: renderAngles)
+            let smoothedAngle: CGFloat
+            if let previous = smoothedSegmentAngles[index] {
+                smoothedAngle = smoothAngle(
+                    rawAngle,
+                    previous: previous,
+                    factor: spec.smoothing
+                )
             } else {
-                smoothed = rawAngle
+                smoothedAngle = rawAngle
             }
-            smoothedTailAngle = smoothed
-            tail.zRotation = smoothed
+            smoothedSegmentAngles[index] = smoothedAngle
+
+            let segmentLength = arcLength(
+                from: spec.spanStart,
+                to: spec.spanEnd,
+                positions: renderSpine
+            )
+            let width = max(
+                bodyLength * 0.05,
+                segmentLength + bodyWidth * spec.overlapRatio
+            )
+            let height = max(bodyWidth * 0.22, bodyWidth * spec.heightScale)
+            let bodyDirection = CGVector(dx: cos(smoothedAngle), dy: sin(smoothedAngle))
+            let position: CGPoint
+            if let attachmentT = spec.attachmentT {
+                let attachment = interpolateSpine(at: attachmentT, positions: renderSpine)
+                let inset = bodyWidth * spec.attachmentInsetRatio
+                position = CGPoint(
+                    x: attachment.x + bodyDirection.dx * inset,
+                    y: attachment.y + bodyDirection.dy * inset
+                )
+            } else {
+                let centerT = (spec.spanStart + spec.spanEnd) * 0.5
+                let center = interpolateSpine(at: centerT, positions: renderSpine)
+                let centerOffset = segmentLength * spec.centerOffsetRatio
+                position = CGPoint(
+                    x: center.x + bodyDirection.dx * centerOffset,
+                    y: center.y + bodyDirection.dy * centerOffset
+                )
+            }
+
+            segment.sprite.position = position
+            segment.sprite.zRotation = smoothedAngle
+            segment.sprite.size = CGSize(width: width, height: height)
         }
+
+        updateTail(renderSpine: renderSpine, renderAngles: renderAngles)
     }
 
-    // MARK: - Frame Helpers
+    // MARK: - Tail
 
-    /// Compute a bounding frame encompassing all spine positions plus body-width padding.
-    private func computeSpriteFrame(spinePositions: [CGPoint]) -> CGRect {
-        guard !spinePositions.isEmpty else {
-            return CGRect(x: 0, y: 0, width: bodyLength, height: bodyWidth)
+    private func updateTail(renderSpine: [CGPoint], renderAngles: [CGFloat]) {
+        guard let tailSprite else { return }
+
+        guard let peduncleSpec = bodySegments.last?.spec else { return }
+
+        let attachPosition = interpolateSpine(at: peduncleSpec.spanEnd, positions: renderSpine)
+        let rawAngle = smoothedSegmentAngles.last.flatMap { $0 }
+            ?? interpolateAngle(at: peduncleSpec.rotationT, angles: renderAngles)
+        let smoothedAngle: CGFloat
+
+        if let previous = smoothedTailAngle {
+            smoothedAngle = smoothAngle(
+                rawAngle,
+                previous: previous,
+                factor: Layout.tailSmoothing
+            )
+        } else {
+            smoothedAngle = rawAngle
         }
+        smoothedTailAngle = smoothedAngle
 
-        var minX = CGFloat.greatestFiniteMagnitude
-        var maxX = -CGFloat.greatestFiniteMagnitude
-        var minY = CGFloat.greatestFiniteMagnitude
-        var maxY = -CGFloat.greatestFiniteMagnitude
-
-        for pos in spinePositions {
-            minX = min(minX, pos.x)
-            maxX = max(maxX, pos.x)
-            minY = min(minY, pos.y)
-            maxY = max(maxY, pos.y)
-        }
-
-        let padding = bodyWidth * 0.7
-        minX -= padding; maxX += padding
-        minY -= padding; maxY += padding
-
-        let width  = max(maxX - minX, bodyLength * 0.6)
-        let height = max(maxY - minY, bodyWidth  * 1.5)
-        let cx = (minX + maxX) / 2
-        let cy = (minY + maxY) / 2
-
-        return CGRect(x: cx - width / 2, y: cy - height / 2, width: width, height: height)
+        let bodyDirection = CGVector(dx: cos(smoothedAngle), dy: sin(smoothedAngle))
+        let overlap = bodyWidth * Layout.tailOverlapRatio
+        tailSprite.position = CGPoint(
+            x: attachPosition.x + bodyDirection.dx * overlap,
+            y: attachPosition.y + bodyDirection.dy * overlap
+        )
+        tailSprite.zRotation = smoothedAngle
+        tailSprite.size = CGSize(
+            width: bodyWidth * Layout.tailWidthScale,
+            height: bodyWidth * Layout.tailHeightScale
+        )
     }
 
-    /// Clamp render-only segment lengths to suppress occasional extreme outliers.
+    // MARK: - Geometry Helpers
+
+    /// Clamp render-only segment lengths to suppress occasional physics outliers.
     private func sanitizeSpinePositions(_ positions: [CGPoint]) -> [CGPoint] {
         guard positions.count >= 2 else { return positions }
 
-        let maxSegLength = FishConfig.spineSegmentLength * 1.8
+        let maxSegmentLength = FishConfig.spineSegmentLength * 1.8
         var sanitized: [CGPoint] = [positions[0]]
 
-        for i in 1..<positions.count {
-            let prev = sanitized[i - 1]
-            var curr = positions[i]
-            if !curr.x.isFinite || !curr.y.isFinite { curr = prev }
-
-            let dx = curr.x - prev.x
-            let dy = curr.y - prev.y
-            let dist = sqrt(dx * dx + dy * dy)
-
-            if dist > maxSegLength, dist > 0.001 {
-                let scale = maxSegLength / dist
-                curr = CGPoint(x: prev.x + dx * scale, y: prev.y + dy * scale)
+        for index in 1..<positions.count {
+            let previous = sanitized[index - 1]
+            var current = positions[index]
+            if !current.x.isFinite || !current.y.isFinite {
+                current = previous
             }
-            sanitized.append(curr)
+
+            let dx = current.x - previous.x
+            let dy = current.y - previous.y
+            let distance = sqrt(dx * dx + dy * dy)
+
+            if distance > maxSegmentLength, distance > 0.001 {
+                let scale = maxSegmentLength / distance
+                current = CGPoint(
+                    x: previous.x + dx * scale,
+                    y: previous.y + dy * scale
+                )
+            }
+            sanitized.append(current)
         }
+
         return sanitized
     }
 
-    /// Recompute segment angles from render spine.
-    /// Returns the angle at each particle pointing FROM that particle TOWARD the head
-    /// (i.e. atan2(p[i] - p[i+1])).  Adding π gives the tail-outward direction.
+    /// Angles point from the sampled location back toward the head.
     private func computeAngles(from positions: [CGPoint]) -> [CGFloat] {
         guard positions.count >= 2 else { return positions.isEmpty ? [] : [0] }
 
         var angles: [CGFloat] = []
         angles.reserveCapacity(positions.count)
-        for i in 0..<(positions.count - 1) {
-            let dx = positions[i].x - positions[i + 1].x
-            let dy = positions[i].y - positions[i + 1].y
+
+        for index in 0..<(positions.count - 1) {
+            let dx = positions[index].x - positions[index + 1].x
+            let dy = positions[index].y - positions[index + 1].y
             angles.append(atan2(dy, dx))
         }
         angles.append(angles.last ?? 0)
         return angles
     }
 
-    /// Exponential smoothing + per-frame step cap for frame center/size.
-    private func stabilizeFrame(_ target: CGRect) -> CGRect {
-        guard let previous = smoothedFrame else {
-            smoothedFrame = target
-            return target
+    private func interpolateSpine(at t: CGFloat, positions: [CGPoint]) -> CGPoint {
+        guard positions.count >= 2 else { return positions.first ?? .zero }
+
+        let clampedT = max(0, min(1, t))
+        let maxIndex = CGFloat(positions.count - 1)
+        let rawIndex = clampedT * maxIndex
+        let index0 = min(Int(rawIndex), positions.count - 1)
+        let index1 = min(index0 + 1, positions.count - 1)
+        let fraction = rawIndex - CGFloat(index0)
+
+        let p0 = positions[index0]
+        let p1 = positions[index1]
+        return CGPoint(
+            x: p0.x + (p1.x - p0.x) * fraction,
+            y: p0.y + (p1.y - p0.y) * fraction
+        )
+    }
+
+    private func interpolateAngle(at t: CGFloat, angles: [CGFloat]) -> CGFloat {
+        guard angles.count >= 2 else { return angles.first ?? 0 }
+
+        let clampedT = max(0, min(1, t))
+        let maxIndex = CGFloat(angles.count - 1)
+        let rawIndex = clampedT * maxIndex
+        let index0 = min(Int(rawIndex), angles.count - 1)
+        let index1 = min(index0 + 1, angles.count - 1)
+        let fraction = rawIndex - CGFloat(index0)
+
+        let a0 = angles[index0]
+        let a1 = angles[index1]
+        var diff = a1 - a0
+        while diff > .pi { diff -= 2 * .pi }
+        while diff < -.pi { diff += 2 * .pi }
+        return a0 + diff * fraction
+    }
+
+    private func arcLength(from startT: CGFloat, to endT: CGFloat, positions: [CGPoint]) -> CGFloat {
+        let sampleCount = 5
+        let start = max(0, min(1, startT))
+        let end = max(0, min(1, endT))
+        guard end > start else { return 0 }
+
+        var previous = interpolateSpine(at: start, positions: positions)
+        var total: CGFloat = 0
+
+        for sample in 1...sampleCount {
+            let t = start + (end - start) * CGFloat(sample) / CGFloat(sampleCount)
+            let current = interpolateSpine(at: t, positions: positions)
+            let dx = current.x - previous.x
+            let dy = current.y - previous.y
+            total += sqrt(dx * dx + dy * dy)
+            previous = current
         }
 
-        let alpha: CGFloat = 0.22
-        let maxCenterStep: CGFloat = FishConfig.spineSegmentLength * 0.8
-        let maxSizeStep:   CGFloat = FishConfig.spineSegmentLength * 0.9
+        return total
+    }
 
-        let prevCenter   = CGPoint(x: previous.midX, y: previous.midY)
-        let targetCenter = CGPoint(x: target.midX,   y: target.midY)
-        let dx   = targetCenter.x - prevCenter.x
-        let dy   = targetCenter.y - prevCenter.y
-        let dist = sqrt(dx * dx + dy * dy)
+    private func smoothAngle(_ angle: CGFloat, previous: CGFloat, factor: CGFloat) -> CGFloat {
+        var delta = angle - previous
+        while delta > .pi { delta -= 2 * .pi }
+        while delta < -.pi { delta += 2 * .pi }
+        return previous + delta * max(0, min(1, factor))
+    }
 
-        let limitedCenter: CGPoint
-        if dist > maxCenterStep, dist > 0.001 {
-            let scale = maxCenterStep / dist
-            limitedCenter = CGPoint(x: prevCenter.x + dx * scale, y: prevCenter.y + dy * scale)
-        } else {
-            limitedCenter = targetCenter
-        }
-
-        let newCenter = CGPoint(
-            x: prevCenter.x + (limitedCenter.x - prevCenter.x) * alpha,
-            y: prevCenter.y + (limitedCenter.y - prevCenter.y) * alpha
+    private static func croppedTexture(from bodyTexture: SKTexture, start: CGFloat, end: CGFloat) -> SKTexture {
+        let rect = CGRect(
+            x: max(0, min(1, start)),
+            y: 0,
+            width: max(0.01, min(1, end - start)),
+            height: 1
         )
-
-        let limitedWidth = max(
-            bodyLength * 0.6,
-            min(previous.width  + maxSizeStep, max(previous.width  - maxSizeStep, target.width))
-        )
-        let limitedHeight = max(
-            bodyWidth  * 1.5,
-            min(previous.height + maxSizeStep, max(previous.height - maxSizeStep, target.height))
-        )
-        let newWidth  = previous.width  + (limitedWidth  - previous.width)  * alpha
-        let newHeight = previous.height + (limitedHeight - previous.height) * alpha
-
-        let stabilized = CGRect(
-            x: newCenter.x - newWidth  / 2,
-            y: newCenter.y - newHeight / 2,
-            width:  newWidth,
-            height: newHeight
-        )
-        smoothedFrame = stabilized
-        return stabilized
+        return SKTexture(rect: rect, in: bodyTexture)
     }
 }

@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import SpriteKit
+import UIKit
 
 /// Orchestrates all goldfish subsystems: steering, physics, oscillation, state, rendering.
 final class GoldfishEntity {
@@ -46,29 +47,55 @@ final class GoldfishEntity {
 
     /// Setup visual rendering. Call after init, adds fish sprite to the scene.
     func setupRendering(in scene: SKScene) {
-        // Load body texture from Assets; fall back to procedural if asset is missing.
-        let bodyTexture: SKTexture
-        if UIImage(named: "fish_body") != nil {
-            bodyTexture = SKTexture(imageNamed: "fish_body")
+        let segmentTextureNames = [
+            "fish_head",
+            "fish_shoulder",
+            "fish_mid",
+            "fish_rear",
+            "fish_peduncle"
+        ]
+        let segmentTextures = Dictionary(
+            uniqueKeysWithValues: segmentTextureNames.compactMap { name in
+                UIImage(named: name).map { _ in (name, SKTexture(imageNamed: name)) }
+            }
+        )
+        let hasFullSegmentSet = segmentTextures.count == segmentTextureNames.count
+
+        // Legacy body texture is now fallback-only. The main path is the segmented asset set.
+        let bodyTexture: SKTexture?
+        if hasFullSegmentSet {
+            bodyTexture = nil
+        } else if let mirrored = mirroredTexture(named: "fish_body") {
+            bodyTexture = mirrored
         } else {
             bodyTexture = FishTextureGenerator.generateBodyTexture(
                 size: CGSize(width: 512, height: 256)
             )
         }
 
-        // Load tail fin texture from Assets (optional — nil disables separate tail sprite).
-        let tailTexture: SKTexture? = UIImage(named: "fish_tail") != nil
-            ? SKTexture(imageNamed: "fish_tail")
-            : nil
+        let tailTexture: SKTexture? =
+            hasFullSegmentSet
+            ? (UIImage(named: "fish_tail") != nil ? SKTexture(imageNamed: "fish_tail") : nil)
+            : mirroredTexture(named: "fish_tail")
 
         let assembler = FishSpriteAssembler(
             bodyTexture: bodyTexture,
+            bodySegmentTextures: segmentTextures,
             tailTexture: tailTexture,
             bodyLength: 240,
             bodyWidth: 90
         )
         scene.addChild(assembler.rootNode)
         self.spriteAssembler = assembler
+    }
+
+    private func mirroredTexture(named name: String) -> SKTexture? {
+        guard let image = UIImage(named: name) else { return nil }
+        if let cgImage = image.cgImage {
+            let mirrored = UIImage(cgImage: cgImage, scale: image.scale, orientation: .upMirrored)
+            return SKTexture(image: mirrored)
+        }
+        return SKTexture(image: image.withHorizontallyFlippedOrientation())
     }
 
     /// Apply runtime motion tuning from debug panel.
